@@ -261,10 +261,13 @@
       <option value="true">An (Keine Header/Footer)</option>
     </select>
 
-    <label for="directional-vibrations" id="label-directional-vibrations" style="margin-top: 15px;">Richtungsabhängige Vibrationen / Directional Vibrations</label>
-    <select id="directional-vibrations">
-      <option value="true" selected>An (Verschiedene Muster für Links/Rechts)</option>
-      <option value="false">Aus (Einheitliches Muster)</option>
+    <label for="turn-vibration" id="label-turn-vibration" style="margin-top: 15px;">Kurven-Vibrationen / Turn Vibrations</label>
+    <select id="turn-vibration">
+      <option value="directional" selected>Richtungsabhängig (Links/Rechts)</option>
+      <option value="1_short">1 Kurz</option>
+      <option value="2_short">2 Kurz</option>
+      <option value="1_long">1 Lang</option>
+      <option value="off">Aus</option>
     </select>
 
     <label for="show-breadcrumbs" id="label-show-breadcrumbs" style="margin-top: 15px;">Zurückgelegte Route anzeigen / Show Traveled Route</label>
@@ -449,9 +452,12 @@
       fullscreenLabel: "Vollbild-Modus (Karte)",
       fullscreenOn: "An (Keine Header/Footer)",
       fullscreenOff: "Aus (Standardlayout)",
-      directionalVibrationsLabel: "Richtungsabhängige Vibrationen",
-      directionalVibrationsOn: "An (Verschiedene Muster)",
-      directionalVibrationsOff: "Aus (Einheitliches Muster)",
+      turnVibrationLabel: "Kurven-Vibrationen",
+      turnVibrationDirectional: "Richtungsabhängig (Links/Rechts)",
+      turnVibration1Short: "1 Kurz",
+      turnVibration2Short: "2 Kurz",
+      turnVibration1Long: "1 Lang",
+      turnVibrationOff: "Aus",
       breadcrumbsLabel: "Zurückgelegte Route anzeigen",
       navViewModeLabel: "Navigations-Ansicht",
       navViewMode0: "Karte + Auto-Popup",
@@ -515,9 +521,12 @@
       fullscreenLabel: "Fullscreen Mode (Map)",
       fullscreenOn: "On (No Header/Footer)",
       fullscreenOff: "Off (Standard Layout)",
-      directionalVibrationsLabel: "Directional Vibrations",
-      directionalVibrationsOn: "On (Distinct Patterns)",
-      directionalVibrationsOff: "Off (Uniform Pattern)",
+      turnVibrationLabel: "Turn Vibrations",
+      turnVibrationDirectional: "Directional (Left/Right)",
+      turnVibration1Short: "1 Short",
+      turnVibration2Short: "2 Short",
+      turnVibration1Long: "1 Long",
+      turnVibrationOff: "Off",
       breadcrumbsLabel: "Show Traveled Route",
       navViewModeLabel: "Navigation View Mode",
       navViewMode0: "Map + Auto-Popup",
@@ -552,7 +561,7 @@
     var gpsIntervalIdx = document.getElementById("gps-interval").selectedIndex;
     var mapSourceIdx = document.getElementById("map-source").selectedIndex;
     var fullscreenIdx = document.getElementById("fullscreen-map").selectedIndex;
-    var directionalVibrationsIdx = document.getElementById("directional-vibrations").selectedIndex;
+    var turnVibrationIdx = document.getElementById("turn-vibration").selectedIndex;
     var showBreadcrumbsIdx = document.getElementById("show-breadcrumbs").selectedIndex;
     var navViewModeIdx = document.getElementById("nav-view-mode").selectedIndex;
     
@@ -579,10 +588,13 @@
     fullscreenSelect.options[0].text = t.fullscreenOff;
     fullscreenSelect.options[1].text = t.fullscreenOn;
 
-    document.getElementById("label-directional-vibrations").innerText = t.directionalVibrationsLabel;
-    var dirVibSelect = document.getElementById("directional-vibrations");
-    dirVibSelect.options[0].text = t.directionalVibrationsOn;
-    dirVibSelect.options[1].text = t.directionalVibrationsOff;
+    document.getElementById("label-turn-vibration").innerText = t.turnVibrationLabel;
+    var turnVibSelect = document.getElementById("turn-vibration");
+    turnVibSelect.options[0].text = t.turnVibrationDirectional;
+    turnVibSelect.options[1].text = t.turnVibration1Short;
+    turnVibSelect.options[2].text = t.turnVibration2Short;
+    turnVibSelect.options[3].text = t.turnVibration1Long;
+    turnVibSelect.options[4].text = t.turnVibrationOff;
 
     document.getElementById("label-show-breadcrumbs").innerText = t.breadcrumbsLabel;
     var breadcrumbsSelect = document.getElementById("show-breadcrumbs");
@@ -605,7 +617,7 @@
     document.getElementById("gps-interval").selectedIndex = gpsIntervalIdx;
     document.getElementById("map-source").selectedIndex = mapSourceIdx;
     document.getElementById("fullscreen-map").selectedIndex = fullscreenIdx;
-    document.getElementById("directional-vibrations").selectedIndex = directionalVibrationsIdx;
+    document.getElementById("turn-vibration").selectedIndex = turnVibrationIdx;
     document.getElementById("show-breadcrumbs").selectedIndex = showBreadcrumbsIdx;
     document.getElementById("nav-view-mode").selectedIndex = navViewModeIdx;
     
@@ -917,7 +929,7 @@
     var appLang = document.getElementById("app-lang").value;
     var mapSource = document.getElementById("map-source").value;
     var fullscreen = document.getElementById("fullscreen-map").value === "true";
-    var directionalVibrations = document.getElementById("directional-vibrations").value === "true";
+    var turnVibration = document.getElementById("turn-vibration").value;
     var showBreadcrumbs = document.getElementById("show-breadcrumbs").value === "true";
     var navViewMode = parseInt(document.getElementById("nav-view-mode").value, 10);
     
@@ -937,7 +949,7 @@
       language: appLang,
       mapSource: mapSource,
       fullscreen: fullscreen,
-      directionalVibrations: directionalVibrations,
+      turnVibration: turnVibration,
       showBreadcrumbs: showBreadcrumbs,
       navViewMode: navViewMode,
       dashboardFields: dashboardFields
@@ -993,8 +1005,14 @@
   setSelectByValue("map-source", getQueryParam("map") || "opentopomap");
   setSelectByValue("fullscreen-map", getQueryParam("fullscreen"));
   
-  var qDirVib = getQueryParam("directional_vibrations");
-  setSelectByValue("directional-vibrations", qDirVib !== "false" ? "true" : "false");
+  var qTurnVib = getQueryParam("turn_vibration");
+  if (qTurnVib) {
+    setSelectByValue("turn-vibration", qTurnVib);
+  } else {
+    // Migration from old setting
+    var qDirVib = getQueryParam("directional_vibrations");
+    setSelectByValue("turn-vibration", qDirVib !== "false" ? "directional" : "1_short");
+  }
   setSelectByValue("show-breadcrumbs", getQueryParam("show_breadcrumbs"));
   setSelectByValue("nav-view-mode", getQueryParam("nav_view_mode"));
   
