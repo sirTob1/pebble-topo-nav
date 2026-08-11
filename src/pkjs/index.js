@@ -221,7 +221,7 @@ function openConfigPage() {
   var mapSource = localStorage.getItem('mapSource') || 'opentopomap';
   var fullscreen = localStorage.getItem('fullscreen') || 'false';
   var showBreadcrumbs = localStorage.getItem('showBreadcrumbs') !== 'false';
-  var directionalVibrations = localStorage.getItem('directionalVibrations') !== 'false';
+  var turnVibration = localStorage.getItem('turnVibration') || (localStorage.getItem('directionalVibrations') !== 'false' ? 'directional' : '1_short');
   var savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
   
   // Keep only the latest 3 trips for the settings page to prevent URL overflow
@@ -261,7 +261,7 @@ function openConfigPage() {
             '&map=' + mapSource + 
             '&fullscreen=' + fullscreen + 
             '&show_breadcrumbs=' + showBreadcrumbs + 
-            '&directional_vibrations=' + directionalVibrations +
+            '&turn_vibration=' + turnVibration +
             '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
             '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '31') + 
             '&is_nav=' + (isNavigating ? 'true' : 'false') + 
@@ -639,8 +639,8 @@ Pebble.addEventListener('webviewclosed', function(e) {
       var oldShowBreadcrumbs = localStorage.getItem('showBreadcrumbs') !== 'false';
       localStorage.setItem('showBreadcrumbs', showBreadcrumbs ? 'true' : 'false');
       
-      var directionalVibrations = settings.directionalVibrations !== undefined ? settings.directionalVibrations : true;
-      localStorage.setItem('directionalVibrations', directionalVibrations ? 'true' : 'false');
+      var turnVibration = settings.turnVibration !== undefined ? settings.turnVibration : (settings.directionalVibrations !== undefined ? (settings.directionalVibrations ? 'directional' : '1_short') : 'directional');
+      localStorage.setItem('turnVibration', turnVibration);
       
       var dashboardFields = settings.dashboardFields !== undefined ? settings.dashboardFields : 31;
       localStorage.setItem('dashboardFields', dashboardFields.toString());
@@ -1048,11 +1048,17 @@ function updateWatchNavigationAndMap() {
         // Trigger turn haptic vibration and popup at ~50 meters (only once per turn)
         if (distToTurn <= 50) {
           if (lastVibratedTurnIdx !== turnIdx) {
-            var useDirVib = localStorage.getItem('directionalVibrations') !== 'false';
-            if (useDirVib) {
+            var turnVib = localStorage.getItem('turnVibration') || (localStorage.getItem('directionalVibrations') !== 'false' ? 'directional' : '1_short');
+            if (turnVib === 'directional') {
               vibrateAlert = turnBearingDiff > 0 ? 3 : 1; // 3 = Right, 1 = Left
-            } else {
-              vibrateAlert = 4; // 4 = Uniform
+            } else if (turnVib === '1_short') {
+              vibrateAlert = 4;
+            } else if (turnVib === '2_short') {
+              vibrateAlert = 5;
+            } else if (turnVib === '1_long') {
+              vibrateAlert = 6;
+            } else if (turnVib === 'off') {
+              vibrateAlert = 0;
             }
             lastVibratedTurnIdx = turnIdx;
             if (localStorage.getItem('navViewMode') !== '1') { // 1 = Map Only, so 0 and 2 will show popup
