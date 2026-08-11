@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Settings:** Added a toggle option to disable directional vibrations (different vibration patterns for left/right turns) and use a uniform vibration instead (US-14).
+
 ## [2.8.0] - 2026-08-05
 
 ### Changed

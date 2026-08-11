@@ -214,7 +214,8 @@ enum {
   VIBE_ALERT_NONE = 0,
   VIBE_ALERT_TURN_LEFT = 1,
   VIBE_ALERT_OFF_ROUTE = 2,
-  VIBE_ALERT_TURN_RIGHT = 3
+  VIBE_ALERT_TURN_RIGHT = 3,
+  VIBE_ALERT_TURN_UNIFORM = 4
 };
 
 static const uint32_t s_off_route_segments[] = { 100, 100, 100, 100, 100 };
@@ -877,6 +878,8 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
       vibes_long_pulse(); // 1 long pulse for right
     } else if (alert_type == VIBE_ALERT_OFF_ROUTE) {
       vibes_enqueue_custom_pattern(s_off_route_pattern); // 3 rapid pulses for off route
+    } else if (alert_type == VIBE_ALERT_TURN_UNIFORM) {
+      vibes_short_pulse(); // 1 short pulse for turn
     }
   }
 

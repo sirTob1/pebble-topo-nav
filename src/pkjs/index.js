@@ -221,6 +221,7 @@ function openConfigPage() {
   var mapSource = localStorage.getItem('mapSource') || 'opentopomap';
   var fullscreen = localStorage.getItem('fullscreen') || 'false';
   var showBreadcrumbs = localStorage.getItem('showBreadcrumbs') !== 'false';
+  var directionalVibrations = localStorage.getItem('directionalVibrations') !== 'false';
   var savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
   
   // Keep only the latest 3 trips for the settings page to prevent URL overflow
@@ -260,6 +261,7 @@ function openConfigPage() {
             '&map=' + mapSource + 
             '&fullscreen=' + fullscreen + 
             '&show_breadcrumbs=' + showBreadcrumbs + 
+            '&directional_vibrations=' + directionalVibrations +
             '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
             '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '31') + 
             '&is_nav=' + (isNavigating ? 'true' : 'false') + 
@@ -636,6 +638,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
       var showBreadcrumbs = settings.showBreadcrumbs !== undefined ? settings.showBreadcrumbs : true;
       var oldShowBreadcrumbs = localStorage.getItem('showBreadcrumbs') !== 'false';
       localStorage.setItem('showBreadcrumbs', showBreadcrumbs ? 'true' : 'false');
+      
+      var directionalVibrations = settings.directionalVibrations !== undefined ? settings.directionalVibrations : true;
+      localStorage.setItem('directionalVibrations', directionalVibrations ? 'true' : 'false');
       
       var dashboardFields = settings.dashboardFields !== undefined ? settings.dashboardFields : 31;
       localStorage.setItem('dashboardFields', dashboardFields.toString());
@@ -1043,7 +1048,12 @@ function updateWatchNavigationAndMap() {
         // Trigger turn haptic vibration and popup at ~50 meters (only once per turn)
         if (distToTurn <= 50) {
           if (lastVibratedTurnIdx !== turnIdx) {
-            vibrateAlert = turnBearingDiff > 0 ? 3 : 1; // 3 = Right, 1 = Left
+            var useDirVib = localStorage.getItem('directionalVibrations') !== 'false';
+            if (useDirVib) {
+              vibrateAlert = turnBearingDiff > 0 ? 3 : 1; // 3 = Right, 1 = Left
+            } else {
+              vibrateAlert = 4; // 4 = Uniform
+            }
             lastVibratedTurnIdx = turnIdx;
             if (localStorage.getItem('navViewMode') !== '1') { // 1 = Map Only, so 0 and 2 will show popup
               payload.NAV_POPUP_STATE = 1;
