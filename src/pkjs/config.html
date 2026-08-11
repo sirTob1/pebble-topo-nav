@@ -261,6 +261,12 @@
       <option value="true">An (Keine Header/Footer)</option>
     </select>
 
+    <label for="directional-vibrations" id="label-directional-vibrations" style="margin-top: 15px;">Richtungsabhängige Vibrationen / Directional Vibrations</label>
+    <select id="directional-vibrations">
+      <option value="true" selected>An (Verschiedene Muster für Links/Rechts)</option>
+      <option value="false">Aus (Einheitliches Muster)</option>
+    </select>
+
     <label for="show-breadcrumbs" id="label-show-breadcrumbs" style="margin-top: 15px;">Zurückgelegte Route anzeigen / Show Traveled Route</label>
     <select id="show-breadcrumbs">
       <option value="true" selected>An / On</option>
@@ -443,6 +449,9 @@
       fullscreenLabel: "Vollbild-Modus (Karte)",
       fullscreenOn: "An (Keine Header/Footer)",
       fullscreenOff: "Aus (Standardlayout)",
+      directionalVibrationsLabel: "Richtungsabhängige Vibrationen",
+      directionalVibrationsOn: "An (Verschiedene Muster)",
+      directionalVibrationsOff: "Aus (Einheitliches Muster)",
       breadcrumbsLabel: "Zurückgelegte Route anzeigen",
       navViewModeLabel: "Navigations-Ansicht",
       navViewMode0: "Karte + Auto-Popup",
@@ -506,6 +515,9 @@
       fullscreenLabel: "Fullscreen Mode (Map)",
       fullscreenOn: "On (No Header/Footer)",
       fullscreenOff: "Off (Standard Layout)",
+      directionalVibrationsLabel: "Directional Vibrations",
+      directionalVibrationsOn: "On (Distinct Patterns)",
+      directionalVibrationsOff: "Off (Uniform Pattern)",
       breadcrumbsLabel: "Show Traveled Route",
       navViewModeLabel: "Navigation View Mode",
       navViewMode0: "Map + Auto-Popup",
@@ -540,6 +552,7 @@
     var gpsIntervalIdx = document.getElementById("gps-interval").selectedIndex;
     var mapSourceIdx = document.getElementById("map-source").selectedIndex;
     var fullscreenIdx = document.getElementById("fullscreen-map").selectedIndex;
+    var directionalVibrationsIdx = document.getElementById("directional-vibrations").selectedIndex;
     var showBreadcrumbsIdx = document.getElementById("show-breadcrumbs").selectedIndex;
     var navViewModeIdx = document.getElementById("nav-view-mode").selectedIndex;
     
@@ -566,6 +579,11 @@
     fullscreenSelect.options[0].text = t.fullscreenOff;
     fullscreenSelect.options[1].text = t.fullscreenOn;
 
+    document.getElementById("label-directional-vibrations").innerText = t.directionalVibrationsLabel;
+    var dirVibSelect = document.getElementById("directional-vibrations");
+    dirVibSelect.options[0].text = t.directionalVibrationsOn;
+    dirVibSelect.options[1].text = t.directionalVibrationsOff;
+
     document.getElementById("label-show-breadcrumbs").innerText = t.breadcrumbsLabel;
     var breadcrumbsSelect = document.getElementById("show-breadcrumbs");
     breadcrumbsSelect.options[0].text = t.breadcrumbsOn;
@@ -587,6 +605,7 @@
     document.getElementById("gps-interval").selectedIndex = gpsIntervalIdx;
     document.getElementById("map-source").selectedIndex = mapSourceIdx;
     document.getElementById("fullscreen-map").selectedIndex = fullscreenIdx;
+    document.getElementById("directional-vibrations").selectedIndex = directionalVibrationsIdx;
     document.getElementById("show-breadcrumbs").selectedIndex = showBreadcrumbsIdx;
     document.getElementById("nav-view-mode").selectedIndex = navViewModeIdx;
     
@@ -898,6 +917,7 @@
     var appLang = document.getElementById("app-lang").value;
     var mapSource = document.getElementById("map-source").value;
     var fullscreen = document.getElementById("fullscreen-map").value === "true";
+    var directionalVibrations = document.getElementById("directional-vibrations").value === "true";
     var showBreadcrumbs = document.getElementById("show-breadcrumbs").value === "true";
     var navViewMode = parseInt(document.getElementById("nav-view-mode").value, 10);
     
@@ -917,6 +937,7 @@
       language: appLang,
       mapSource: mapSource,
       fullscreen: fullscreen,
+      directionalVibrations: directionalVibrations,
       showBreadcrumbs: showBreadcrumbs,
       navViewMode: navViewMode,
       dashboardFields: dashboardFields
@@ -969,8 +990,11 @@
 
   setSelectByValue("gps-interval", getQueryParam("interval"));
   setSelectByValue("app-lang", getQueryParam("lang"));
-  setSelectByValue("map-source", getQueryParam("map"));
+  setSelectByValue("map-source", getQueryParam("map") || "opentopomap");
   setSelectByValue("fullscreen-map", getQueryParam("fullscreen"));
+  
+  var qDirVib = getQueryParam("directional_vibrations");
+  setSelectByValue("directional-vibrations", qDirVib !== "false" ? "true" : "false");
   setSelectByValue("show-breadcrumbs", getQueryParam("show_breadcrumbs"));
   setSelectByValue("nav-view-mode", getQueryParam("nav_view_mode"));
   
