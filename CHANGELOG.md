@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.10.0] - 2026-08-11
+
+### Added
+- **Turn Vibrations Options:** Expanded the directional vibrations toggle into a dropdown menu allowing users to choose between Directional, 1 Short, 2 Short, 1 Long, or completely disabling turn vibrations (US-15).
+
 ## [2.9.0] - 2026-08-11
 
 ### Added
