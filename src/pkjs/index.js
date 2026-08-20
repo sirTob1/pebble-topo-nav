@@ -263,7 +263,7 @@ function openConfigPage() {
             '&show_breadcrumbs=' + showBreadcrumbs + 
             '&turn_vibration=' + turnVibration +
             '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
-            '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '31') + 
+            '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '15') + 
             '&is_nav=' + (isNavigating ? 'true' : 'false') + 
             '&routes=' + encodeURIComponent(JSON.stringify(routesMeta)) +
             '&active_route_id=' + (localStorage.getItem('activeRouteId') || '0') +
@@ -642,7 +642,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
       var turnVibration = settings.turnVibration !== undefined ? settings.turnVibration : (settings.directionalVibrations !== undefined ? (settings.directionalVibrations ? 'directional' : '1_short') : 'directional');
       localStorage.setItem('turnVibration', turnVibration);
       
-      var dashboardFields = settings.dashboardFields !== undefined ? settings.dashboardFields : 31;
+      var dashboardFields = settings.dashboardFields !== undefined ? settings.dashboardFields : 15;
       localStorage.setItem('dashboardFields', dashboardFields.toString());
 
       var navViewMode = settings.navViewMode !== undefined ? settings.navViewMode : 0;
@@ -868,7 +868,7 @@ function onGPSError(err) {
     NAV_DISTANCE: '---',
     LANGUAGE: isEnglish ? 1 : 0,
     FULLSCREEN_MODE: fullscreenMode,
-    DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '31', 10),
+    DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
     GPS_ALT_STR: "---",
     HEADING_STR: "---"
@@ -888,7 +888,7 @@ function updateWatchNavigationAndMap() {
       RECORDING_STATE: isNavigating ? 1 : 0,
       ACTIVE_ROUTE_ID: activeRouteId,
       FULLSCREEN_MODE: fullscreenMode,
-      DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '31', 10),
+      DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
       NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
       GPS_ALT_STR: "---",
       HEADING_STR: "---"
@@ -907,7 +907,7 @@ function updateWatchNavigationAndMap() {
     GPS_HEADING: Math.round(currentHeading),
     ACTIVE_ROUTE_ID: activeRouteId,
     FULLSCREEN_MODE: fullscreenMode,
-    DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '31', 10),
+    DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
     GPS_ALT_STR: Math.round(currentLocation.altitude) + 'm',
     HEADING_STR: getHeadingString(currentHeading, isEnglish)

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- **Menu Localization & Dashboard Defaults**: Fixed an issue where the settings menu had hardcoded German labels that did not translate to English. Also fixed a bug where 5 dashboard data fields were selected by default despite a maximum limit of 4 fields. (US-20)
+
+
+
 ## [3.0.0] - 2026-08-11
 
 ### Added
