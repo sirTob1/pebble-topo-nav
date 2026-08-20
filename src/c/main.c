@@ -77,7 +77,189 @@ static bool s_gps_connected = false;
 static bool s_off_route = false;
 static bool s_recording_active = false;
 static int s_nav_bearing = -1; // -1 = no instruction, 0 = straight, 90 = right, 180 = uturn, 270 = left
-static bool s_is_english = false;
+typedef enum {
+  LANG_EN = 0,
+  LANG_DE = 1,
+  LANG_ES = 2,
+  LANG_FR = 3,
+  LANG_IT = 4,
+  LANG_COUNT
+} AppLanguage;
+
+typedef enum {
+  STR_LOADING_MAP = 0,
+  STR_NO_GPS_SIGNAL,
+  STR_AVG_SPEED,
+  STR_DISTANCE_WR,
+  STR_ELEV_GAIN,
+  STR_ELEV_LOSS,
+  STR_GPS_COORDS,
+  STR_ALTITUDE,
+  STR_TIME,
+  STR_DURATION,
+  STR_HEADING,
+  STR_BATTERY,
+  STR_DIST_TO_DEST,
+  STR_WAITING_GPS,
+  STR_SELECT_ROUTE,
+  STR_NO_ROUTES,
+  STR_ADD_IN_SETTINGS,
+  STR_ACTIVE_STOP,
+  STR_STOP_NAV,
+  STR_CONFIRM_CANCEL,
+  STR_SWITCH_ROUTE,
+  STR_SAVES_CURRENT,
+  STR_START_NAV,
+  STR_START_CANCEL,
+  STR_NO_ROUTE_ACTIVE,
+  STR_COUNT
+} StringID;
+
+static AppLanguage s_language = LANG_EN;
+
+static const char* const s_translations[LANG_COUNT][STR_COUNT] = {
+  [LANG_EN] = {
+    [STR_LOADING_MAP] = "Loading map...",
+    [STR_NO_GPS_SIGNAL] = "No GPS signal",
+    [STR_AVG_SPEED] = "AVG SPEED",
+    [STR_DISTANCE_WR] = "DISTANCE (W/R)",
+    [STR_ELEV_GAIN] = "ELEV GAIN",
+    [STR_ELEV_LOSS] = "ELEV LOSS",
+    [STR_GPS_COORDS] = "GPS COORDS",
+    [STR_ALTITUDE] = "ALTITUDE",
+    [STR_TIME] = "TIME",
+    [STR_DURATION] = "DURATION",
+    [STR_HEADING] = "HEADING",
+    [STR_BATTERY] = "BATTERY",
+    [STR_DIST_TO_DEST] = "DIST TO DEST",
+    [STR_WAITING_GPS] = "Waiting for GPS...",
+    [STR_SELECT_ROUTE] = "Select Route",
+    [STR_NO_ROUTES] = "No routes synced",
+    [STR_ADD_IN_SETTINGS] = "Add in settings",
+    [STR_ACTIVE_STOP] = "Active (Select to stop)",
+    [STR_STOP_NAV] = "Stop navigation?",
+    [STR_CONFIRM_CANCEL] = "SELECT: Confirm\nBACK: Cancel",
+    [STR_SWITCH_ROUTE] = "Switch route?",
+    [STR_SAVES_CURRENT] = "Saves current trip.\nSELECT: Start\nBACK: Cancel",
+    [STR_START_NAV] = "Start navigation?",
+    [STR_START_CANCEL] = "SELECT: Start\nBACK: Cancel",
+    [STR_NO_ROUTE_ACTIVE] = "No active route"
+  },
+  [LANG_DE] = {
+    [STR_LOADING_MAP] = "Karte wird geladen...",
+    [STR_NO_GPS_SIGNAL] = "Kein GPS-Signal",
+    [STR_AVG_SPEED] = "Ø-GESCHWIND.",
+    [STR_DISTANCE_WR] = "DISTANZ (G/R)",
+    [STR_ELEV_GAIN] = "HM AUFSTIEG",
+    [STR_ELEV_LOSS] = "HM ABSTIEG",
+    [STR_GPS_COORDS] = "GPS KOORDINATEN",
+    [STR_ALTITUDE] = "AKTUELLE HÖHE",
+    [STR_TIME] = "UHRZEIT",
+    [STR_DURATION] = "DAUER",
+    [STR_HEADING] = "RICHTUNG",
+    [STR_BATTERY] = "AKKUSTAND",
+    [STR_DIST_TO_DEST] = "DISTANZ ZUM ZIEL",
+    [STR_WAITING_GPS] = "Warte auf GPS...",
+    [STR_SELECT_ROUTE] = "Route auswählen",
+    [STR_NO_ROUTES] = "Keine Routen synchr.",
+    [STR_ADD_IN_SETTINGS] = "In Einstellungen laden",
+    [STR_ACTIVE_STOP] = "Aktiv (Klick zum Stoppen)",
+    [STR_STOP_NAV] = "Navi stoppen?",
+    [STR_CONFIRM_CANCEL] = "SELECT: Ja\nBACK: Nein",
+    [STR_SWITCH_ROUTE] = "Route wechseln?",
+    [STR_SAVES_CURRENT] = "Speichert aktuelle.\nSELECT: Start\nBACK: Nein",
+    [STR_START_NAV] = "Navi starten?",
+    [STR_START_CANCEL] = "SELECT: Start\nBACK: Nein",
+    [STR_NO_ROUTE_ACTIVE] = i18n(STR_NO_ROUTE_ACTIVE)
+  },
+  [LANG_ES] = {
+    [STR_LOADING_MAP] = "Cargando mapa...",
+    [STR_NO_GPS_SIGNAL] = "Sin señal GPS",
+    [STR_AVG_SPEED] = "VEL MED",
+    [STR_DISTANCE_WR] = "DIST (C/R)",
+    [STR_ELEV_GAIN] = "DESNIV POS",
+    [STR_ELEV_LOSS] = "DESNIV NEG",
+    [STR_GPS_COORDS] = "COORD GPS",
+    [STR_ALTITUDE] = "ALTITUD",
+    [STR_TIME] = "HORA",
+    [STR_DURATION] = "DURACIÓN",
+    [STR_HEADING] = "RUMBO",
+    [STR_BATTERY] = "BATERÍA",
+    [STR_DIST_TO_DEST] = "DIST AL DEST",
+    [STR_WAITING_GPS] = "Esperando GPS...",
+    [STR_SELECT_ROUTE] = "Elegir ruta",
+    [STR_NO_ROUTES] = "Sin rutas sincr.",
+    [STR_ADD_IN_SETTINGS] = "Añadir en ajustes",
+    [STR_ACTIVE_STOP] = "Activa (Clic parar)",
+    [STR_STOP_NAV] = "¿Detener nav.?",
+    [STR_CONFIRM_CANCEL] = "SELECT: Sí\nBACK: No",
+    [STR_SWITCH_ROUTE] = "¿Cambiar ruta?",
+    [STR_SAVES_CURRENT] = "Guarda la actual.\nSELECT: Iniciar\nBACK: No",
+    [STR_START_NAV] = "¿Iniciar nav.?",
+    [STR_START_CANCEL] = "SELECT: Iniciar\nBACK: No",
+    [STR_NO_ROUTE_ACTIVE] = "Sin ruta activa"
+  },
+  [LANG_FR] = {
+    [STR_LOADING_MAP] = "Chargement...",
+    [STR_NO_GPS_SIGNAL] = "Pas de signal GPS",
+    [STR_AVG_SPEED] = "VIT MOY",
+    [STR_DISTANCE_WR] = "DIST (M/R)",
+    [STR_ELEV_GAIN] = "DÉNIV POS",
+    [STR_ELEV_LOSS] = "DÉNIV NÉG",
+    [STR_GPS_COORDS] = "COORD GPS",
+    [STR_ALTITUDE] = "ALTITUDE",
+    [STR_TIME] = "HEURE",
+    [STR_DURATION] = "DURÉE",
+    [STR_HEADING] = "CAP",
+    [STR_BATTERY] = "BATTERIE",
+    [STR_DIST_TO_DEST] = "DIST AU BUT",
+    [STR_WAITING_GPS] = "Attente du GPS...",
+    [STR_SELECT_ROUTE] = "Choisir l'itn.",
+    [STR_NO_ROUTES] = "Aucun itin. sync.",
+    [STR_ADD_IN_SETTINGS] = "Ajouter ds params",
+    [STR_ACTIVE_STOP] = "Actif (Clic arrêt)",
+    [STR_STOP_NAV] = "Arrêter la nav.?",
+    [STR_CONFIRM_CANCEL] = "SELECT: Oui\nBACK: Non",
+    [STR_SWITCH_ROUTE] = "Changer d'itin.?",
+    [STR_SAVES_CURRENT] = "Sauvegarde.\nSELECT: Dém.\nBACK: Non",
+    [STR_START_NAV] = "Démarrer nav.?",
+    [STR_START_CANCEL] = "SELECT: Dém.\nBACK: Non",
+    [STR_NO_ROUTE_ACTIVE] = "Aucun itin. actif"
+  },
+  [LANG_IT] = {
+    [STR_LOADING_MAP] = "Caricamento...",
+    [STR_NO_GPS_SIGNAL] = "Nessun segnale",
+    [STR_AVG_SPEED] = "VEL MEDIA",
+    [STR_DISTANCE_WR] = "DIST (C/R)",
+    [STR_ELEV_GAIN] = "DISL POS",
+    [STR_ELEV_LOSS] = "DISL NEG",
+    [STR_GPS_COORDS] = "COORD GPS",
+    [STR_ALTITUDE] = "ALTITUDINE",
+    [STR_TIME] = "ORA",
+    [STR_DURATION] = "DURATA",
+    [STR_HEADING] = "DIREZIONE",
+    [STR_BATTERY] = "BATTERIA",
+    [STR_DIST_TO_DEST] = "DIST A DEST",
+    [STR_WAITING_GPS] = "Attesa GPS...",
+    [STR_SELECT_ROUTE] = "Seleziona perc.",
+    [STR_NO_ROUTES] = "Nessun perc. sinc.",
+    [STR_ADD_IN_SETTINGS] = "Aggiungi in imp.",
+    [STR_ACTIVE_STOP] = "Attivo (Clic stop)",
+    [STR_STOP_NAV] = "Fermare la nav.?",
+    [STR_CONFIRM_CANCEL] = "SELECT: Sì\nBACK: No",
+    [STR_SWITCH_ROUTE] = "Cambiare perc.?",
+    [STR_SAVES_CURRENT] = "Salva l'attuale.\nSELECT: Avvia\nBACK: No",
+    [STR_START_NAV] = "Avviare la nav.?",
+    [STR_START_CANCEL] = "SELECT: Avvia\nBACK: No",
+    [STR_NO_ROUTE_ACTIVE] = "Nessun perc. attivo"
+  }
+};
+
+static const char* i18n(StringID id) {
+  if (s_language >= LANG_COUNT) return s_translations[LANG_EN][id];
+  return s_translations[s_language][id];
+}
+
 static int s_active_count = 0;
 static void update_ui_languages(void);
 static void layout_dashboard(void);
@@ -497,8 +679,8 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
     // Loading Text
     graphics_context_set_text_color(ctx, GColorDarkGray);
     const char *loading_text = s_gps_connected ? 
-      (s_is_english ? "Loading map..." : "Karte wird geladen...") : 
-      (s_is_english ? "No GPS signal" : "Kein GPS-Signal");
+      i18n(STR_LOADING_MAP) : 
+      i18n(STR_NO_GPS_SIGNAL);
     graphics_draw_text(ctx, 
                        loading_text, 
                        fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
@@ -652,7 +834,7 @@ static void big_nav_update_proc(Layer *layer, GContext *ctx) {
   
   if (s_active_route_id == 0) {
     graphics_context_set_text_color(ctx, GColorBlack);
-    graphics_draw_text(ctx, "Keine Route aktiv", fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD),
+    graphics_draw_text(ctx, i18n(STR_NO_ROUTE_ACTIVE), fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD),
                        GRect(0, bounds.size.h / 2 - 20, bounds.size.w, 40),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     return;
@@ -980,42 +1162,42 @@ static void outbox_failed_handler(DictionaryIterator *iter, AppMessageResult rea
 
 static void update_ui_languages() {
   if (s_dash_avg_speed_title_layer) {
-    text_layer_set_text(s_dash_avg_speed_title_layer, s_is_english ? "AVG SPEED" : "Ø-GESCHWIND.");
+    text_layer_set_text(s_dash_avg_speed_title_layer, i18n(STR_AVG_SPEED));
   }
   if (s_dash_dist_title_layer) {
-    text_layer_set_text(s_dash_dist_title_layer, s_is_english ? "DISTANCE (W/R)" : "DISTANZ (G/R)");
+    text_layer_set_text(s_dash_dist_title_layer, i18n(STR_DISTANCE_WR));
   }
   if (s_dash_gain_title_layer) {
-    text_layer_set_text(s_dash_gain_title_layer, s_is_english ? "ELEV GAIN" : "HM AUFSTIEG");
+    text_layer_set_text(s_dash_gain_title_layer, i18n(STR_ELEV_GAIN));
   }
   if (s_dash_loss_title_layer) {
-    text_layer_set_text(s_dash_loss_title_layer, s_is_english ? "ELEV LOSS" : "HM ABSTIEG");
+    text_layer_set_text(s_dash_loss_title_layer, i18n(STR_ELEV_LOSS));
   }
   if (s_dash_coords_title_layer) {
-    text_layer_set_text(s_dash_coords_title_layer, s_is_english ? "GPS COORDS" : "GPS KOORDINATEN");
+    text_layer_set_text(s_dash_coords_title_layer, i18n(STR_GPS_COORDS));
   }
   if (s_dash_alt_title_layer) {
-    text_layer_set_text(s_dash_alt_title_layer, s_is_english ? "ALTITUDE" : "AKTUELLE HÖHE");
+    text_layer_set_text(s_dash_alt_title_layer, i18n(STR_ALTITUDE));
   }
   if (s_dash_time_title_layer) {
-    text_layer_set_text(s_dash_time_title_layer, s_is_english ? "TIME" : "UHRZEIT");
+    text_layer_set_text(s_dash_time_title_layer, i18n(STR_TIME));
   }
   if (s_dash_duration_title_layer) {
-    text_layer_set_text(s_dash_duration_title_layer, s_is_english ? "DURATION" : "DAUER");
+    text_layer_set_text(s_dash_duration_title_layer, i18n(STR_DURATION));
   }
   if (s_dash_heading_title_layer) {
-    text_layer_set_text(s_dash_heading_title_layer, s_is_english ? "HEADING" : "RICHTUNG");
+    text_layer_set_text(s_dash_heading_title_layer, i18n(STR_HEADING));
   }
   if (s_dash_battery_title_layer) {
-    text_layer_set_text(s_dash_battery_title_layer, s_is_english ? "BATTERY" : "AKKUSTAND");
+    text_layer_set_text(s_dash_battery_title_layer, i18n(STR_BATTERY));
   }
   if (s_dash_dist_dest_title_layer) {
-    text_layer_set_text(s_dash_dist_dest_title_layer, s_is_english ? "DIST TO DEST" : "DISTANZ ZUM ZIEL");
+    text_layer_set_text(s_dash_dist_dest_title_layer, i18n(STR_DIST_TO_DEST));
   }
   if (s_instruction_layer) {
     const char *curr_text = text_layer_get_text(s_instruction_layer);
     if (curr_text && (strcmp(curr_text, "Warte auf GPS...") == 0 || strcmp(curr_text, "Waiting for GPS...") == 0)) {
-      snprintf(s_instruction_text, sizeof(s_instruction_text), "%s", s_is_english ? "Waiting for GPS..." : "Warte auf GPS...");
+      snprintf(s_instruction_text, sizeof(s_instruction_text), "%s", i18n(STR_WAITING_GPS));
       text_layer_set_text(s_instruction_layer, s_instruction_text);
     }
   }
@@ -1480,14 +1662,14 @@ static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t s
 }
 
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-  menu_cell_basic_header_draw(ctx, cell_layer, s_is_english ? "Select Route" : "Route auswählen");
+  menu_cell_basic_header_draw(ctx, cell_layer, i18n(STR_SELECT_ROUTE));
 }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
   if (s_route_count == 0) {
     menu_cell_basic_draw(ctx, cell_layer, 
-                         s_is_english ? "No routes synced" : "Keine Routen synchr.", 
-                         s_is_english ? "Add in settings" : "In Einstellungen laden", 
+                         i18n(STR_NO_ROUTES), 
+                         i18n(STR_ADD_IN_SETTINGS), 
                          NULL);
     return;
   }
@@ -1505,7 +1687,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
     
     menu_cell_basic_draw(ctx, cell_layer, 
                          title_buf, 
-                         is_active ? (s_is_english ? "Active (Select to stop)" : "Aktiv (Klick zum Stoppen)") : "", 
+                         is_active ? (i18n(STR_ACTIVE_STOP)) : "", 
                          NULL);
   }
 }
@@ -1563,17 +1745,17 @@ static void confirm_window_load(Window *window) {
   
   if (s_pending_route_id == 0) {
     // Stopping route
-    text_layer_set_text(s_confirm_text_layer, s_is_english ? "Stop navigation?" : "Navi stoppen?");
-    text_layer_set_text(s_confirm_subtext_layer, s_is_english ? "SELECT: Confirm\nBACK: Cancel" : "SELECT: Ja\nBACK: Nein");
+    text_layer_set_text(s_confirm_text_layer, i18n(STR_STOP_NAV));
+    text_layer_set_text(s_confirm_subtext_layer, i18n(STR_CONFIRM_CANCEL));
   } else {
     if (s_active_route_id != 0) {
       // Overwriting existing active route navigation
-      text_layer_set_text(s_confirm_text_layer, s_is_english ? "Switch route?" : "Route wechseln?");
-      text_layer_set_text(s_confirm_subtext_layer, s_is_english ? "Saves current trip.\nSELECT: Start\nBACK: Cancel" : "Speichert aktuelle.\nSELECT: Start\nBACK: Nein");
+      text_layer_set_text(s_confirm_text_layer, i18n(STR_SWITCH_ROUTE));
+      text_layer_set_text(s_confirm_subtext_layer, i18n(STR_SAVES_CURRENT));
     } else {
       // Starting new route navigation
-      text_layer_set_text(s_confirm_text_layer, s_is_english ? "Start navigation?" : "Navi starten?");
-      text_layer_set_text(s_confirm_subtext_layer, s_is_english ? "SELECT: Start\nBACK: Cancel" : "SELECT: Start\nBACK: Nein");
+      text_layer_set_text(s_confirm_text_layer, i18n(STR_START_NAV));
+      text_layer_set_text(s_confirm_subtext_layer, i18n(STR_START_CANCEL));
     }
   }
   

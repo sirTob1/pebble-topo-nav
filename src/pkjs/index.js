@@ -1,3 +1,13 @@
+var i18n = {
+  en: { noGps: 'No GPS Signal', offRoute: 'OFF ROUTE!', right: 'Right', left: 'Left', in: ' in ', straight: 'Straight for ', noRoute: 'No route', compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"] },
+  de: { noGps: 'Kein GPS-Signal', offRoute: 'ABSEITS DER ROUTE!', right: 'Rechts', left: 'Links', in: ' in ', straight: 'Gerade aus ', noRoute: 'Keine Route', compass: ["N", "NNO", "NO", "ONO", "O", "OSO", "SO", "SSO", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"] },
+  es: { noGps: 'Sin señal GPS', offRoute: '¡FUERA DE RUTA!', right: 'Derecha', left: 'Izquierda', in: ' en ', straight: 'Recto por ', noRoute: 'Sin ruta', compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"] },
+  fr: { noGps: 'Pas signal GPS', offRoute: 'HORS ROUTE !', right: 'Droite', left: 'Gauche', in: ' à ', straight: 'Tout droit p. ', noRoute: 'Aucun itin.', compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"] },
+  it: { noGps: 'Nessun GPS', offRoute: 'FUORI PERC!', right: 'Destra', left: 'Sinistra', in: ' tra ', straight: 'Dritto per ', noRoute: 'Nessun perc.', compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"] }
+};
+function getLangCode() { return localStorage.getItem('language') || 'de'; } // Default to DE as in original app it seems 'en' check was default false? Actually, we fall back to 'de' or 'en'. Let's do 'de' for consistency or 'en' if not set. Wait, old code was `localStorage.getItem('language') === 'en'`, meaning if not 'en', it was 'de'. Let's do `localStorage.getItem('language') || 'de'` but wait, if it's not set it's 'de'.
+function getLangInt() { return {'en': 0, 'de': 1, 'es': 2, 'fr': 3, 'it': 4}[getLangCode()] || 0; }
+
 var LatLon = require('geodesy/latlon-spherical.js');
 var png = require('./png');
 var graphics = require('./graphics');
@@ -886,25 +896,21 @@ function onGPSSuccess(position) {
   updateWatchNavigationAndMap();
 }
 
-function getHeadingString(heading, isEnglish) {
+function getHeadingString(heading) {
   if (heading < 0 || heading === null || heading === undefined) return "---";
   var val = Math.floor((heading / 22.5) + 0.5);
-  var arrEn = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-  var arrDe = ["N", "NNO", "NO", "ONO", "O", "OSO", "SO", "SSO", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-  return isEnglish ? arrEn[(val % 16)] : arrDe[(val % 16)];
+  return (i18n[getLangCode()] || i18n['de']).compass[val % 16];
 }
 
 function onGPSError(err) {
   console.log('GPS Error: ' + err.message);
-  
-  var isEnglish = localStorage.getItem('language') === 'en';
   var fullscreenMode = localStorage.getItem('fullscreen') === 'true' ? 1 : 0;
   // Notify watch of lost connection
   Pebble.sendAppMessage({
     GPS_CONNECTED: 0,
-    NAV_INSTRUCTION: isEnglish ? 'No GPS Signal' : 'Kein GPS-Signal',
+    NAV_INSTRUCTION: (i18n[getLangCode()] || i18n['de']).noGps,
     NAV_DISTANCE: '---',
-    LANGUAGE: isEnglish ? 1 : 0,
+    LANGUAGE: getLangInt(),
     FULLSCREEN_MODE: fullscreenMode,
     DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
@@ -916,14 +922,13 @@ function onGPSError(err) {
 
 // Perform calculations and send updates to watch
 function updateWatchNavigationAndMap() {
-  var isEnglish = localStorage.getItem('language') === 'en';
   var activeRouteId = parseInt(localStorage.getItem('activeRouteId') || '0', 10);
   var fullscreenMode = localStorage.getItem('fullscreen') === 'true' ? 1 : 0;
   
   if (!currentLocation) {
     Pebble.sendAppMessage({
       GPS_CONNECTED: 0,
-      LANGUAGE: isEnglish ? 1 : 0,
+      LANGUAGE: getLangInt(),
       RECORDING_STATE: isNavigating ? 1 : 0,
       ACTIVE_ROUTE_ID: activeRouteId,
       FULLSCREEN_MODE: fullscreenMode,
@@ -941,7 +946,7 @@ function updateWatchNavigationAndMap() {
     GPS_CONNECTED: 1,
     AVG_SPEED: avgSpeedKmh.toFixed(1),
     GPS_COORDS: currentLocation.lat.toFixed(5) + ', ' + currentLocation.lon.toFixed(5),
-    LANGUAGE: isEnglish ? 1 : 0,
+    LANGUAGE: getLangInt(),
     RECORDING_STATE: isNavigating ? 1 : 0,
     GPS_SPEED: Math.round(currentSpeed * 100),
     GPS_HEADING: Math.round(currentHeading),
@@ -951,7 +956,7 @@ function updateWatchNavigationAndMap() {
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
     MAP_ORIENTATION: parseInt(localStorage.getItem('mapOrientation') || '0', 10),
     GPS_ALT_STR: Math.round(currentLocation.altitude) + 'm',
-    HEADING_STR: getHeadingString(currentHeading, isEnglish)
+    HEADING_STR: getHeadingString(currentHeading)
   };
 
   var offRoute = false;
@@ -1034,7 +1039,7 @@ function updateWatchNavigationAndMap() {
     if (minDist > 50) {
       offRoute = true;
       payload.OFF_ROUTE = 1;
-      payload.NAV_INSTRUCTION = isEnglish ? 'OFF ROUTE!' : 'ABSEITS DER ROUTE!';
+      payload.NAV_INSTRUCTION = (i18n[getLangCode()] || i18n['de']).offRoute;
       payload.NAV_DISTANCE = Math.round(minDist) + 'm';
       payload.NAV_BEARING = -1;
       
@@ -1083,11 +1088,7 @@ function updateWatchNavigationAndMap() {
         
         // Formulate instruction text
         var dirText = '';
-        if (isEnglish) {
-          dirText = turnBearingDiff > 0 ? 'Right' : 'Left';
-        } else {
-          dirText = turnBearingDiff > 0 ? 'Rechts' : 'Links';
-        }
+        dirText = turnBearingDiff > 0 ? (i18n[getLangCode()] || i18n['de']).right : (i18n[getLangCode()] || i18n['de']).left;
         payload.NAV_INSTRUCTION = dirText + ' in ' + payload.NAV_DISTANCE;
         
         // Map bearing to 0=straight, 90=right, 180=uturn, 270=left
@@ -1124,13 +1125,13 @@ function updateWatchNavigationAndMap() {
         }
       } else {
         // No more sharp turns.
-        payload.NAV_INSTRUCTION = (isEnglish ? 'Straight for ' : 'Gerade aus ') + payload.NAV_DISTANCE;
+        payload.NAV_INSTRUCTION = (i18n[getLangCode()] || i18n['de']).straight + payload.NAV_DISTANCE;
         payload.NAV_BEARING = 0; // straight
         payload.NAV_POPUP_STATE = 0;
       }
     }
   } else {
-    payload.NAV_INSTRUCTION = isEnglish ? 'No route' : 'Keine Route';
+    payload.NAV_INSTRUCTION = (i18n[getLangCode()] || i18n['de']).noRoute;
     payload.NAV_DISTANCE = '---';
     payload.TRIP_DISTANCE = '--- ---';
     payload.ELEVATION_GAIN = '--- ---';
