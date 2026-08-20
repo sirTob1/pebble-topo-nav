@@ -40,6 +40,36 @@ var currentHeading = -1;
 // Haptic feedback states
 var lastVibratedTurnIdx = -1;
 var hasVibratedOffRoute = false;
+var significantTurns = [];
+
+function precalculateTurns() {
+  significantTurns = [];
+  if (!gpxTrack || gpxTrack.length < 2) return;
+  
+  var baseIdx = 0;
+  var baseBearing = getBearing(gpxTrack[0].lat, gpxTrack[0].lon, gpxTrack[1].lat, gpxTrack[1].lon);
+  
+  for (var i = 1; i < gpxTrack.length - 1; i++) {
+    var nextBearing = getBearing(gpxTrack[i].lat, gpxTrack[i].lon, gpxTrack[i+1].lat, gpxTrack[i+1].lon);
+    var diff = (nextBearing - baseBearing + 180) % 360 - 180;
+    
+    if (Math.abs(diff) > 45) {
+      significantTurns.push({
+        idx: i,
+        bearingDiff: diff
+      });
+      baseBearing = nextBearing;
+      baseIdx = i;
+    } else {
+      var distFromBase = haversineDistance(gpxTrack[baseIdx].lat, gpxTrack[baseIdx].lon, gpxTrack[i].lat, gpxTrack[i].lon);
+      if (distFromBase > 100 && Math.abs(diff) < 20) {
+         baseBearing = nextBearing;
+         baseIdx = i;
+      }
+    }
+  }
+  console.log("Precalculated " + significantTurns.length + " significant turns.");
+}
 
 // Average speed & walked route state
 var totalMovingDistance = 0;
@@ -146,6 +176,7 @@ Pebble.addEventListener('ready', function() {
   if (storedTrack) {
     try {
       gpxTrack = JSON.parse(storedTrack);
+      precalculateTurns();
       console.log('Loaded GPX track from storage: ' + gpxTrack.length + ' points.');
     } catch (e) {
       gpxTrack = [];
@@ -187,6 +218,7 @@ Pebble.addEventListener('ready', function() {
       var activeRoute = savedRoutes.filter(function(r) { return (r.id & 0xFFFFFFFF) === (activeId & 0xFFFFFFFF); })[0];
       if (activeRoute) {
         gpxTrack = activeRoute.points || [];
+        precalculateTurns();
         console.log('Loaded active route: ' + activeRoute.name + ' (' + gpxTrack.length + ' points).');
       } else {
         gpxTrack = [];
@@ -200,6 +232,7 @@ Pebble.addEventListener('ready', function() {
     if (storedTrackFallback) {
       try {
         gpxTrack = JSON.parse(storedTrackFallback);
+        precalculateTurns();
         console.log('Loaded legacy GPX track: ' + gpxTrack.length + ' points.');
       } catch (e) {
         gpxTrack = [];
@@ -340,6 +373,7 @@ function activateSavedRoute(routeId) {
 
     localStorage.setItem('activeRouteId', routeId.toString());
     gpxTrack = foundRoute.points || [];
+    precalculateTurns();
     localStorage.setItem('gpxTrack', JSON.stringify(gpxTrack));
     console.log('Activated route: ' + foundRoute.name);
     
@@ -681,6 +715,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
       if (settings.gpxTrack !== undefined) {
         // Legacy upload compatibility (clean up when done)
         gpxTrack = settings.gpxTrack;
+        precalculateTurns();
         localStorage.setItem('gpxTrack', JSON.stringify(gpxTrack));
         if (gpxTrack.length > 0) {
           var savedRoutes = JSON.parse(localStorage.getItem('savedRoutes') || '[]');
@@ -1008,21 +1043,28 @@ function updateWatchNavigationAndMap() {
       
       // 2. Look ahead for significant turns
       var turnIdx = -1;
-      var distToTurn = haversineDistance(currentLocation.lat, currentLocation.lon, gpxTrack[closestIdx + 1].lat, gpxTrack[closestIdx + 1].lon);;;
+      var distToTurn = 0;
       var turnBearingDiff = 0;
       
-      // Check all remaining trackpoints for bearing changes and measure the distance to the first significant change.
-      var previousBearing = getBearing(gpxTrack[closestIdx].lat, gpxTrack[closestIdx].lon, gpxTrack[closestIdx + 1].lat, gpxTrack[closestIdx + 1].lon);
-      for (var idx = closestIdx + 1; idx < trackLengthMinusOne; idx++) {
-        var nextBearing = getBearing(gpxTrack[idx].lat, gpxTrack[idx].lon, gpxTrack[idx + 1].lat, gpxTrack[idx + 1].lon);
-        var diff = (nextBearing - previousBearing + 180) % 360 - 180; // diff in [-180, 180]
-        if (Math.abs(diff) > 30) {
-          turnIdx = idx;
-          turnBearingDiff = diff;
+      // Find the next significant turn ahead of closestIdx
+      for (var i = 0; i < significantTurns.length; i++) {
+        if (significantTurns[i].idx > closestIdx) {
+          turnIdx = significantTurns[i].idx;
+          turnBearingDiff = significantTurns[i].bearingDiff;
           break;
         }
-        distToTurn += haversineDistance(gpxTrack[idx].lat, gpxTrack[idx].lon, gpxTrack[idx + 1].lat, gpxTrack[idx + 1].lon);;;
-        previousBaring = nextBearing;
+      }
+      
+      if (turnIdx !== -1) {
+        distToTurn = haversineDistance(currentLocation.lat, currentLocation.lon, gpxTrack[closestIdx + 1].lat, gpxTrack[closestIdx + 1].lon);
+        for (var idx = closestIdx + 1; idx < turnIdx; idx++) {
+          distToTurn += haversineDistance(gpxTrack[idx].lat, gpxTrack[idx].lon, gpxTrack[idx + 1].lat, gpxTrack[idx + 1].lon);
+        }
+      } else {
+        distToTurn = haversineDistance(currentLocation.lat, currentLocation.lon, gpxTrack[closestIdx + 1].lat, gpxTrack[closestIdx + 1].lon);
+        for (var idx = closestIdx + 1; idx < trackLengthMinusOne; idx++) {
+          distToTurn += haversineDistance(gpxTrack[idx].lat, gpxTrack[idx].lon, gpxTrack[idx + 1].lat, gpxTrack[idx + 1].lon);
+        }
       }
 
       if (distToTurn > 1000) {

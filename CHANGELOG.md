@@ -4,6 +4,7 @@
 
 ### Fixed
 - **Menu Localization & Dashboard Defaults**: Fixed an issue where the settings menu had hardcoded German labels that did not translate to English. Also fixed a bug where 5 dashboard data fields were selected by default despite a maximum limit of 4 fields. (US-20)
+- **Turn Vibration Logic**: Fixed an issue where the watch would constantly vibrate at every GPX coordinate near a curve. Turn events are now pre-calculated when a route is loaded, and a 45-degree angle threshold is enforced to ensure the watch only vibrates once for actual navigation turns (US-16).
 
 
 
