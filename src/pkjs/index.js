@@ -1087,7 +1087,7 @@ function updateWatchNavigationAndMap() {
         // Map bearing to 0=straight, 90=right, 180=uturn, 270=left
         payload.NAV_BEARING = turnBearingDiff > 0 ? 90 : 270;
         
-        // Trigger turn haptic vibration and popup at ~50 meters (only once per turn)
+        // Trigger turn haptic vibration (only once per turn)
         if (distToTurn <= 50) {
           if (lastVibratedTurnIdx !== turnIdx) {
             var turnVib = localStorage.getItem('turnVibration') || (localStorage.getItem('directionalVibrations') !== 'false' ? 'directional' : '1_short');
@@ -1103,11 +1103,15 @@ function updateWatchNavigationAndMap() {
               vibrateAlert = 0;
             }
             lastVibratedTurnIdx = turnIdx;
-            if (localStorage.getItem('navViewMode') !== '1') { // 1 = Map Only, so 0 and 2 will show popup
-              payload.NAV_POPUP_STATE = 1;
-            } else {
-              payload.NAV_POPUP_STATE = 0;
-            }
+          }
+        }
+        
+        // Continuous Popup State
+        if (distToTurn <= 50) {
+          if (localStorage.getItem('navViewMode') !== '1') { // 1 = Map Only, so 0 and 2 will show popup
+            payload.NAV_POPUP_STATE = 1;
+          } else {
+            payload.NAV_POPUP_STATE = 0;
           }
         } else {
           payload.NAV_POPUP_STATE = 0;
