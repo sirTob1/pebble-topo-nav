@@ -15,6 +15,7 @@ TopoNav brings full topographic map navigation, GPX route guidance, and workout 
 ## 🌟 Key Features (For Users)
 
 * 🗺️ **Detailed Topographic Maps**: Displays real-world topographic maps (contour lines, hiking paths, water bodies) in Pebble-native 64 colors (`GColor8`). Supports **Fullscreen Map Mode** to hide header/footer and maximize the visible map area.
+* 🧭 **Map Rotation**: Choose between "North Up" (map fixed, arrow rotates) and "Heading Up" (map rotates to direction of travel, arrow fixed).
 * 🥾 **GPX Route Guidance**: Upload, name, and store multiple GPX files on your phone. Choose, activate, or deactivate routes directly from a dedicated on-watch menu.
 * 📍 **Sensor-Fused Compass Arrow**: A dynamic direction chevron representing your heading.
   * *Stationary (Speed <= 1.0 m/s)*: Aligns in real time using the watch's hardware magnetic compass.

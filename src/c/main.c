@@ -102,6 +102,10 @@ static bool s_map_ready = false;
 
 #define PERSIST_KEY_FULLSCREEN_MODE 101
 #define PERSIST_KEY_DASHBOARD_FIELDS 102
+#define PERSIST_KEY_MAP_ORIENTATION 103
+
+static int s_map_orientation = 0;
+static int s_drawn_map_heading = -1;
 
 static int s_gps_heading = -1;
 static int s_gps_speed_cms = 0;
@@ -434,23 +438,56 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
   }
 
   if (s_map_ready && s_map_bitmap) {
-    graphics_draw_bitmap_in_rect(ctx, s_map_bitmap, bounds);
+    GPoint center = GPoint(s_current_map_width / 2, s_current_map_height / 2);
     
-    // Draw the direction arrow at the center
-    if (s_gps_connected && s_arrow_outer_path && s_arrow_inner_path) {
+    if (s_map_orientation == 1) {
+      // Heading Up Mode
       int bearing = get_current_bearing();
-      int32_t angle = (TRIG_MAX_ANGLE * bearing) / 360;
-      GPoint center = GPoint(s_current_map_width / 2, s_current_map_height / 2);
       
-      gpath_rotate_to(s_arrow_outer_path, angle);
-      gpath_move_to(s_arrow_outer_path, center);
-      graphics_context_set_fill_color(ctx, GColorYellow);
-      gpath_draw_filled(ctx, s_arrow_outer_path);
+      // Hysteresis Filter (10 degrees)
+      if (s_drawn_map_heading == -1) {
+        s_drawn_map_heading = bearing;
+      } else {
+        int diff = bearing - s_drawn_map_heading;
+        if (diff < -180) diff += 360;
+        if (diff > 180) diff -= 360;
+        if (abs(diff) > 10) {
+          s_drawn_map_heading = bearing;
+        }
+      }
       
-      gpath_rotate_to(s_arrow_inner_path, angle);
-      gpath_move_to(s_arrow_inner_path, center);
-      graphics_context_set_fill_color(ctx, GColorOrange);
-      gpath_draw_filled(ctx, s_arrow_inner_path);
+      int32_t map_angle = (TRIG_MAX_ANGLE * (360 - s_drawn_map_heading)) / 360;
+      graphics_draw_rotated_bitmap(ctx, s_map_bitmap, center, map_angle, center);
+      
+      if (s_gps_connected && s_arrow_outer_path && s_arrow_inner_path) {
+        gpath_rotate_to(s_arrow_outer_path, 0);
+        gpath_move_to(s_arrow_outer_path, center);
+        graphics_context_set_fill_color(ctx, GColorYellow);
+        gpath_draw_filled(ctx, s_arrow_outer_path);
+        
+        gpath_rotate_to(s_arrow_inner_path, 0);
+        gpath_move_to(s_arrow_inner_path, center);
+        graphics_context_set_fill_color(ctx, GColorOrange);
+        gpath_draw_filled(ctx, s_arrow_inner_path);
+      }
+    } else {
+      // North Up Mode
+      graphics_draw_bitmap_in_rect(ctx, s_map_bitmap, bounds);
+      
+      if (s_gps_connected && s_arrow_outer_path && s_arrow_inner_path) {
+        int bearing = get_current_bearing();
+        int32_t angle = (TRIG_MAX_ANGLE * bearing) / 360;
+        
+        gpath_rotate_to(s_arrow_outer_path, angle);
+        gpath_move_to(s_arrow_outer_path, center);
+        graphics_context_set_fill_color(ctx, GColorYellow);
+        gpath_draw_filled(ctx, s_arrow_outer_path);
+        
+        gpath_rotate_to(s_arrow_inner_path, angle);
+        gpath_move_to(s_arrow_inner_path, center);
+        graphics_context_set_fill_color(ctx, GColorOrange);
+        gpath_draw_filled(ctx, s_arrow_inner_path);
+      }
     }
   } else {
     // Render grey loading background
@@ -796,6 +833,18 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
       s_dashboard_fields = new_fields;
       persist_write_int(PERSIST_KEY_DASHBOARD_FIELDS, s_dashboard_fields);
       layout_dashboard();
+    }
+  }
+
+  Tuple *map_orientation_tuple = dict_find(iter, MESSAGE_KEY_MAP_ORIENTATION);
+  if (map_orientation_tuple) {
+    int new_map_orientation = map_orientation_tuple->value->int32;
+    if (new_map_orientation != s_map_orientation) {
+      s_map_orientation = new_map_orientation;
+      persist_write_int(PERSIST_KEY_MAP_ORIENTATION, s_map_orientation);
+      if (s_map_layer && !s_show_dashboard) {
+        layer_mark_dirty(s_map_layer);
+      }
     }
   }
 
@@ -1613,6 +1662,7 @@ static void init() {
   }
   
   s_dashboard_fields = persist_exists(PERSIST_KEY_DASHBOARD_FIELDS) ? persist_read_int(PERSIST_KEY_DASHBOARD_FIELDS) : 31;
+  s_map_orientation = persist_exists(PERSIST_KEY_MAP_ORIENTATION) ? persist_read_int(PERSIST_KEY_MAP_ORIENTATION) : 0;
 
   s_main_window = window_create();
   window_set_window_handlers(s_main_window, (WindowHandlers) {

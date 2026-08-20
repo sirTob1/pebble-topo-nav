@@ -12,6 +12,7 @@
 ## [3.0.0] - 2026-08-11
 
 ### Added
+- **US-18:** Added "Heading Up" map orientation setting for improved navigation. The map now rotates to face the direction of travel (with a 10-degree smoothing filter to prevent jitter), while the navigation arrow remains fixed. This can be toggled in the configuration page (North Up vs Heading Up).
 - **Turn Vibrations Options:** Expanded the directional vibrations toggle into a dropdown menu allowing users to choose between Directional, 1 Short, 2 Short, 1 Long, or completely disabling turn vibrations (US-15).
 
 ## [2.9.0] - 2026-08-11

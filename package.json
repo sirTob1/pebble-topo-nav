@@ -54,7 +54,8 @@
       "NAV_POPUP_STATE",
       "NAV_VIEW_MODE",
       "GPS_ALT_STR",
-      "HEADING_STR"
+      "HEADING_STR",
+      "MAP_ORIENTATION"
     ],
     "resources": {
       "media": []

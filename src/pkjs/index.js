@@ -682,6 +682,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
       var navViewMode = settings.navViewMode !== undefined ? settings.navViewMode : 0;
       localStorage.setItem('navViewMode', navViewMode.toString());
 
+      var mapOrientation = settings.mapOrientation !== undefined ? settings.mapOrientation : 0;
+      localStorage.setItem('mapOrientation', mapOrientation.toString());
+
       if (showBreadcrumbs !== oldShowBreadcrumbs) {
         console.log('Show breadcrumbs setting changed from ' + oldShowBreadcrumbs + ' to ' + showBreadcrumbs);
         isSendingMap = false;
@@ -905,6 +908,7 @@ function onGPSError(err) {
     FULLSCREEN_MODE: fullscreenMode,
     DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
+    MAP_ORIENTATION: parseInt(localStorage.getItem('mapOrientation') || '0', 10),
     GPS_ALT_STR: "---",
     HEADING_STR: "---"
   });
@@ -925,6 +929,7 @@ function updateWatchNavigationAndMap() {
       FULLSCREEN_MODE: fullscreenMode,
       DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
       NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
+    MAP_ORIENTATION: parseInt(localStorage.getItem('mapOrientation') || '0', 10),
       GPS_ALT_STR: "---",
       HEADING_STR: "---"
     });
@@ -944,6 +949,7 @@ function updateWatchNavigationAndMap() {
     FULLSCREEN_MODE: fullscreenMode,
     DASHBOARD_FIELDS: parseInt(localStorage.getItem('dashboardFields') || '15', 10),
     NAV_VIEW_MODE: parseInt(localStorage.getItem('navViewMode') || '0', 10),
+    MAP_ORIENTATION: parseInt(localStorage.getItem('mapOrientation') || '0', 10),
     GPS_ALT_STR: Math.round(currentLocation.altitude) + 'm',
     HEADING_STR: getHeadingString(currentHeading, isEnglish)
   };

@@ -261,6 +261,12 @@
       <option value="true">An (Keine Header/Footer)</option>
     </select>
 
+    <label for="map-orientation" id="label-map-orientation" style="margin-top: 15px;">Kartenausrichtung</label>
+    <select id="map-orientation">
+      <option value="0" selected>North Up (Norden oben)</option>
+      <option value="1">Heading Up (Bewegungsrichtung oben)</option>
+    </select>
+
     <label for="turn-vibration" id="label-turn-vibration" style="margin-top: 15px;">Kurven-Vibrationen</label>
     <select id="turn-vibration">
       <option value="directional" selected>Richtungsabhängig (Links/Rechts)</option>
@@ -452,6 +458,9 @@
       fullscreenLabel: "Vollbild-Modus (Karte)",
       fullscreenOn: "An (Keine Header/Footer)",
       fullscreenOff: "Aus (Standardlayout)",
+      mapOrientationLabel: "Kartenausrichtung",
+      mapOrientationNorth: "North Up (Norden oben)",
+      mapOrientationHeading: "Heading Up (Bewegungsrichtung oben)",
       turnVibrationLabel: "Kurven-Vibrationen",
       turnVibrationDirectional: "Richtungsabhängig (Links/Rechts)",
       turnVibration1Short: "1 Kurz",
@@ -521,6 +530,9 @@
       fullscreenLabel: "Fullscreen Mode (Map)",
       fullscreenOn: "On (No Header/Footer)",
       fullscreenOff: "Off (Standard Layout)",
+      mapOrientationLabel: "Map Orientation",
+      mapOrientationNorth: "North Up",
+      mapOrientationHeading: "Heading Up",
       turnVibrationLabel: "Turn Vibrations",
       turnVibrationDirectional: "Directional (Left/Right)",
       turnVibration1Short: "1 Short",
@@ -587,6 +599,11 @@
     var fullscreenSelect = document.getElementById("fullscreen-map");
     fullscreenSelect.options[0].text = t.fullscreenOff;
     fullscreenSelect.options[1].text = t.fullscreenOn;
+
+    document.getElementById("label-map-orientation").innerText = t.mapOrientationLabel;
+    var mapOrientationSelect = document.getElementById("map-orientation");
+    mapOrientationSelect.options[0].text = t.mapOrientationNorth;
+    mapOrientationSelect.options[1].text = t.mapOrientationHeading;
 
     document.getElementById("label-turn-vibration").innerText = t.turnVibrationLabel;
     var turnVibSelect = document.getElementById("turn-vibration");
@@ -936,6 +953,7 @@
     var appLang = document.getElementById("app-lang").value;
     var mapSource = document.getElementById("map-source").value;
     var fullscreen = document.getElementById("fullscreen-map").value === "true";
+    var mapOrientation = parseInt(document.getElementById("map-orientation").value, 10);
     var turnVibration = document.getElementById("turn-vibration").value;
     var showBreadcrumbs = document.getElementById("show-breadcrumbs").value === "true";
     var navViewMode = parseInt(document.getElementById("nav-view-mode").value, 10);
@@ -956,6 +974,7 @@
       language: appLang,
       mapSource: mapSource,
       fullscreen: fullscreen,
+      mapOrientation: mapOrientation,
       turnVibration: turnVibration,
       showBreadcrumbs: showBreadcrumbs,
       navViewMode: navViewMode,
@@ -1011,6 +1030,7 @@
   setSelectByValue("app-lang", getQueryParam("lang"));
   setSelectByValue("map-source", getQueryParam("map") || "opentopomap");
   setSelectByValue("fullscreen-map", getQueryParam("fullscreen"));
+  setSelectByValue("map-orientation", getQueryParam("map_orientation") || "0");
   
   var qTurnVib = getQueryParam("turn_vibration");
   if (qTurnVib) {
