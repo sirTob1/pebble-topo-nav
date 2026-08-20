@@ -5,6 +5,9 @@
 ### Fixed
 - **Settings Page Crash**: Hotfix for a JavaScript syntax error (literal newline injection) in `config.html` that caused the settings page to freeze, breaking the Save button and language switching functionality.
 
+### Chore
+- **Repository Cleanup**: Removed tracked compiled `.pbw` binary files from the repository to reduce repository bloat (US-21).
+
 ## [3.1.0] - 2026-08-20
 
 ### Added
