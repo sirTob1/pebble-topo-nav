@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.1.0] - 2026-08-20
 
 ### Added
 - **Extended Internationalization:** Added full language support for Spanish, French, and Italian across both the watchapp and the Settings page. This includes navigation directions, compass headings, dashboard metrics, and UI menus. Memory efficiency is maintained by utilizing C read-only data paging (US-19).
@@ -9,6 +9,11 @@
 - **Menu Localization & Dashboard Defaults**: Fixed an issue where the settings menu had hardcoded German labels that did not translate to English. Also fixed a bug where 5 dashboard data fields were selected by default despite a maximum limit of 4 fields. (US-20)
 - **Turn Vibration Logic**: Fixed an issue where the watch would constantly vibrate at every GPX coordinate near a curve. Turn events are now pre-calculated when a route is loaded, and a 45-degree angle threshold is enforced to ensure the watch only vibrates once for actual navigation turns (US-16).
 - **Navigation Pop-ups**: Made the navigation auto-popup state highly robust by decoupling it from the vibration triggers. The popup is now guaranteed to open and close accurately on true 45-degree turns, recovering instantly from connection drops or settings changes (US-17).
+- **Map Orientation Bug**: Fixed an issue where the "Heading Up" map orientation caused the map to rotate in reverse (East and West swapped). Also fixed the North Up and Arrow Only modes which suffered from the same reverse rotation logic due to the Pebble SDK's graphics engine coordinate system.
+- **Settings Page Localization**: Fixed a bug where the Settings Page failed to translate itself when selecting Spanish, French, or Italian due to missing translation objects.
+- **Settings Page State Restoration**: Fixed an issue where the map orientation setting would default back to "North Up" upon reopening the settings page.
+- **Dashboard Fields Localization**: Fixed an issue where new dashboard fields (Altitude, Time, Duration, Heading, Battery, Distance to Destination) were displayed as "undefined" in the settings page.
+- **GPX Button Localization**: Added translations for the GPX file selection button and route name input across all languages.
 
 
 
