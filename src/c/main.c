@@ -170,7 +170,7 @@ static const char* const s_translations[LANG_COUNT][STR_COUNT] = {
     [STR_SAVES_CURRENT] = "Speichert aktuelle.\nSELECT: Start\nBACK: Nein",
     [STR_START_NAV] = "Navi starten?",
     [STR_START_CANCEL] = "SELECT: Start\nBACK: Nein",
-    [STR_NO_ROUTE_ACTIVE] = i18n(STR_NO_ROUTE_ACTIVE)
+    [STR_NO_ROUTE_ACTIVE] = "Keine Route aktiv"
   },
   [LANG_ES] = {
     [STR_LOADING_MAP] = "Cargando mapa...",
@@ -873,8 +873,9 @@ void SpaceOrNewline(char* str) {
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *lang_tuple = dict_find(iter, MESSAGE_KEY_LANGUAGE);
   if (lang_tuple) {
-    s_is_english = (lang_tuple->value->uint8 == 1);
-    persist_write_bool(PERSIST_KEY_LANGUAGE, s_is_english);
+    s_language = lang_tuple->value->uint8;
+    if (s_language >= LANG_COUNT) s_language = LANG_EN;
+    persist_write_int(PERSIST_KEY_LANGUAGE, s_language);
     update_ui_languages();
     if (s_map_layer) {
       layer_mark_dirty(s_map_layer);
@@ -1838,9 +1839,17 @@ static void menu_window_unload(Window *window) {
 // App Initialization
 static void init() {
   if (persist_exists(PERSIST_KEY_LANGUAGE)) {
-    s_is_english = persist_read_bool(PERSIST_KEY_LANGUAGE);
+    int persist_size = persist_get_size(PERSIST_KEY_LANGUAGE);
+    if (persist_size == 1) {
+      bool old_is_english = persist_read_bool(PERSIST_KEY_LANGUAGE);
+      s_language = old_is_english ? LANG_EN : LANG_DE;
+      persist_write_int(PERSIST_KEY_LANGUAGE, s_language);
+    } else {
+      s_language = persist_read_int(PERSIST_KEY_LANGUAGE);
+      if (s_language >= LANG_COUNT) s_language = LANG_EN;
+    }
   } else {
-    s_is_english = false;
+    s_language = LANG_EN;
   }
   
   s_dashboard_fields = persist_exists(PERSIST_KEY_DASHBOARD_FIELDS) ? persist_read_int(PERSIST_KEY_DASHBOARD_FIELDS) : 31;
