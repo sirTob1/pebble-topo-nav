@@ -303,6 +303,7 @@ function openConfigPage() {
             '&lang=' + lang + 
             '&map=' + mapSource + 
             '&fullscreen=' + fullscreen + 
+            '&map_orientation=' + (localStorage.getItem('mapOrientation') || '0') +
             '&show_breadcrumbs=' + showBreadcrumbs + 
             '&turn_vibration=' + turnVibration +
             '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
