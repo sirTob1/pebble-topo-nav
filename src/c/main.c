@@ -638,7 +638,7 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
         }
       }
       
-      int32_t map_angle = (TRIG_MAX_ANGLE * (360 - s_drawn_map_heading)) / 360;
+      int32_t map_angle = (TRIG_MAX_ANGLE * s_drawn_map_heading) / 360;
       graphics_draw_rotated_bitmap(ctx, s_map_bitmap, center, map_angle, center);
       
       if (s_gps_connected && s_arrow_outer_path && s_arrow_inner_path) {
