@@ -658,7 +658,7 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
       
       if (s_gps_connected && s_arrow_outer_path && s_arrow_inner_path) {
         int bearing = get_current_bearing();
-        int32_t angle = (TRIG_MAX_ANGLE * bearing) / 360;
+        int32_t angle = (TRIG_MAX_ANGLE * (360 - bearing)) / 360;
         
         gpath_rotate_to(s_arrow_outer_path, angle);
         gpath_move_to(s_arrow_outer_path, center);
@@ -842,7 +842,8 @@ static void big_nav_update_proc(Layer *layer, GContext *ctx) {
   
   // Draw Arrow
   if (s_big_arrow_path) {
-    int32_t angle = (s_nav_bearing * TRIG_MAX_ANGLE) / 360;
+    int nav_b = s_nav_bearing < 0 ? 0 : s_nav_bearing;
+    int32_t angle = (nav_b == 0 ? 0 : (360 - nav_b)) * TRIG_MAX_ANGLE / 360;
     gpath_rotate_to(s_big_arrow_path, angle);
     GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2 - 20);
     gpath_move_to(s_big_arrow_path, center);
