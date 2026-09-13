@@ -14,6 +14,68 @@ var graphics = require('./graphics');
 var MAP_WIDTH = 200;
 var MAP_HEIGHT = 150;
 
+/////////////////////////// Local storage / tile cache management ///////////////////////
+
+const maxTiles = 200;
+const TILE_LRU_ID = "tileLRU";
+var tileLRU = [];
+{ // Initialization. Scope this code, so variables can be cleaned-up afterwards.
+  let tileLRUfromStorage = localStorage.getItem(TILE_LRU_ID);
+  if ( tileLRUfromStorage ) {
+    tileLRU = tileLRUfromStorage.split(",");
+    if ( tileLRU.length > maxTiles ) {
+      tileLRU.splice(0, tileLRU.length - maxTiles);
+    }
+  }
+  // Validate and convert (from before the tile management).
+  let toRemove = [];
+  let itemCount = localStorage.length
+  for ( var idx = 0; idx < itemCount; idx++ ) {
+    let key = localStorage.key(idx);
+    if ( key.startsWith("tile_") && tileLRU.indexOf(key) < 0 ) {
+      if ( tileLRU.length < maxTiles ) {
+        tileLRU.push(key);
+      } else {
+        toRemove.push(key);
+      }
+    }
+  }
+  for ( const key of toRemove ) {
+    localStorage.removeItem(key);
+  }
+  localStorage.setItem(TILE_LRU_ID, tileLRU.join(","));
+  console.log("Tile cache now contains " + tileLRU.length + " items. Removed " + toRemove.length + " items.");
+ }
+
+function markTileUsed(key) {
+  let idx = tileLRU.indexOf(key);
+  if ( idx >= 0 ) {
+    // Don't care too much about the top items. Prevents continues updating of the local storage.
+    if ( idx >= (tileLRU.length - 10) ) return;
+    tileLRU.splice(idx, 1);
+  } else if ( tileLRU.length >= maxTiles ) {
+    localStorage.removeItem(tileLRU[0]);
+    tileLRU.splice(0,1);
+  }
+  tileLRU.push(key);
+  localStorage.setItem(TILE_LRU_ID, tileLRU.join(","));
+}
+
+function getTileFromCache(key) {
+  value = localStorage.getItem(key);
+  if ( value ) {
+    markTileUsed(key);
+  }
+  return value;
+}
+
+function storeTileInCache(key, value) {
+  markTileUsed(key);
+  localStorage.setItem(key, value);
+}
+
+/////////////////////////// END OF Local storage / tile cache management ///////////////////////
+
 // State Variables
 var CHUNK_SIZE = 3000;
 var gpsInterval = 5;
@@ -841,6 +903,7 @@ function onGPSSuccess(position) {
       lat,
       lon
     );
+    if ( ds < 10 ) return;
     
     var calculatedSpeed = ds / timediff;
     if (position.coords.speed === null || position.coords.speed === undefined) {
@@ -1178,7 +1241,7 @@ function renderAndSendMap() {
     for (var ty = tileYMin; ty <= tileYMax; ty++) {
       var key = currentZoom + '/' + tx + '/' + ty;
       var storeKey = 'tile_' + mapSource + '_' + key;
-      var cachedBase64 = localStorage.getItem(storeKey);
+      var cachedBase64 = getTileFromCache(storeKey);
       
       if (cachedBase64) {
         try {
@@ -1223,9 +1286,9 @@ function renderAndSendMap() {
             
             // Cache downloaded tile in localStorage
             var base64 = arrayBufferToBase64(xhr.response);
-            localStorage.setItem('tile_' + mapSource + '_' + item.key, base64);
+            storeTileInCache('tile_' + mapSource + '_' + item.key, base64);
           } catch (e) {
-            console.log('Error decoding fetched tile ' + item.key + ': ' + e);
+            console.log('Error encoding fetched tile ' + item.key + ': ' + e);
           }
         }
         checkCompleted();
@@ -1340,7 +1403,7 @@ function cacheTrackTiles(track) {
     var item = tileKeys[idx];
     var storeKey = 'tile_' + mapSource + '_' + item.key;
     
-    if (localStorage.getItem(storeKey)) {
+    if (getTileFromCache(storeKey)) {
       idx++;
       downloadNext();
       return;
@@ -1356,7 +1419,7 @@ function cacheTrackTiles(track) {
       if (xhr.status === 200) {
         try {
           var base64 = arrayBufferToBase64(xhr.response);
-          localStorage.setItem(storeKey, base64);
+          storeTileInCache(storeKey, base64);
         } catch (e) {
           console.warn('LocalStorage full, stopping offline caching.');
           return;
