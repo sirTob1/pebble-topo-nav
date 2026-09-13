@@ -361,21 +361,35 @@ function openConfigPage() {
     };
   });
   
-  var url = 'https://sirtob1.github.io/pebble-topo-nav/src/pkjs/config.html?v=' + Date.now() + 
-            '&interval=' + interval + 
-            '&lang=' + lang + 
-            '&map=' + mapSource + 
-            '&fullscreen=' + fullscreen + 
-            '&map_orientation=' + (localStorage.getItem('mapOrientation') || '0') +
-            '&show_breadcrumbs=' + showBreadcrumbs + 
-            '&turn_vibration=' + turnVibration +
-            '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
-            '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '15') + 
-            '&max_tiles=' + (localStorage.getItem('maxTiles') || '200') +
-            '&is_nav=' + (isNavigating ? 'true' : 'false') + 
-            '&routes=' + encodeURIComponent(JSON.stringify(routesMeta)) +
-            '&active_route_id=' + (localStorage.getItem('activeRouteId') || '0') +
-            '&trips=' + encodeURIComponent(JSON.stringify(tripsMeta));
+    var routesStr = encodeURIComponent(JSON.stringify(routesMeta));
+    var tripsStr = encodeURIComponent(JSON.stringify(tripsMeta));
+    
+    // Safety against URL truncation on Android Pebble App (limits at ~2000 chars)
+    if (routesStr.length + tripsStr.length > 1500) {
+      if (recentTrips.length > 1) {
+         recentTrips = recentTrips.slice(-1); // Only keep 1 trip to free up space
+         tripsMeta = recentTrips.map(function(t) {
+            return { id: t.id, date: t.date, distance: t.distance, duration: t.duration, pointsCount: t.points ? t.points.length : 0, pointsStr: compressPointsCompact(t.points) };
+         });
+         tripsStr = encodeURIComponent(JSON.stringify(tripsMeta));
+      }
+    }
+    
+    var url = 'https://sirtob1.github.io/pebble-topo-nav/src/pkjs/config.html?v=' + Date.now() + 
+              '&interval=' + interval + 
+              '&lang=' + lang + 
+              '&map=' + mapSource + 
+              '&fullscreen=' + fullscreen + 
+              '&map_orientation=' + (localStorage.getItem('mapOrientation') || '0') +
+              '&show_breadcrumbs=' + showBreadcrumbs + 
+              '&turn_vibration=' + turnVibration +
+              '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
+              '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '15') + 
+              '&max_tiles=' + (localStorage.getItem('maxTiles') || '200') +
+              '&is_nav=' + (isNavigating ? 'true' : 'false') + 
+              '&active_route_id=' + (localStorage.getItem('activeRouteId') || '0') +
+              '&routes=' + routesStr +
+              '&trips=' + tripsStr;
             
   console.log('Opening config page with url: ' + url.substring(0, 150) + '... Length: ' + url.length);
   Pebble.openURL(url);
