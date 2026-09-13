@@ -255,6 +255,15 @@
       <option value="osm">OpenStreetMap Standard (Schnell / Klares Design)</option>
     </select>
 
+    <label for="max-tiles" id="label-max-tiles" style="margin-top: 15px;">Offline-Karten Cache Größe</label>
+    <select id="max-tiles">
+      <option value="50">50 Kacheln (~1 MB)</option>
+      <option value="100">100 Kacheln (~2 MB)</option>
+      <option value="200" selected>200 Kacheln (~4 MB, Standard)</option>
+      <option value="400">400 Kacheln (~8 MB, lange Touren)</option>
+      <option value="800">800 Kacheln (~16 MB, Maximum)</option>
+    </select>
+
     <label for="fullscreen-map" id="label-fullscreen-map" style="margin-top: 15px;">Vollbild-Modus (Karte)</label>
     <select id="fullscreen-map">
       <option value="false" selected>Aus (Standardlayout)</option>
@@ -455,6 +464,7 @@
       mapCyclOSM: "CyclOSM (Outdoor, Wander- & Radwege)",
       mapMtbMap: "MtbMap (Wander- & Radwege)",
       mapOsm: "OpenStreetMap Standard (Schnell / Klares Design)",
+      maxTilesLabel: "Offline-Karten Cache Größe",
       fullscreenLabel: "Vollbild-Modus (Karte)",
       fullscreenOn: "An (Keine Header/Footer)",
       fullscreenOff: "Aus (Standardlayout)",
@@ -527,6 +537,7 @@
       mapCyclOSM: "CyclOSM (Outdoor, Hiking & Cycling)",
       mapMtbMap: "MtbMap (High-contrast Trails)",
       mapOsm: "OpenStreetMap Standard (Fast / Clean)",
+      maxTilesLabel: "Offline Map Cache Size",
       fullscreenLabel: "Fullscreen Mode (Map)",
       fullscreenOn: "On (No Header/Footer)",
       fullscreenOff: "Off (Standard Layout)",
@@ -589,6 +600,7 @@
     document.getElementById("label-app-lang").innerText = t.langLabel;
     
     document.getElementById("label-map-source").innerText = t.mapSourceLabel;
+    document.getElementById("label-max-tiles").innerText = t.maxTilesLabel || "Offline-Karten Cache Größe";
     var mapSourceSelect = document.getElementById("map-source");
     mapSourceSelect.options[0].text = t.mapOpenTopoMap;
     mapSourceSelect.options[1].text = t.mapCyclOSM;
@@ -973,6 +985,7 @@
       gpsInterval: gpsInterval,
       language: appLang,
       mapSource: mapSource,
+      maxTiles: parseInt(document.getElementById("max-tiles").value, 10),
       fullscreen: fullscreen,
       mapOrientation: mapOrientation,
       turnVibration: turnVibration,
@@ -1029,6 +1042,7 @@
   setSelectByValue("gps-interval", getQueryParam("interval"));
   setSelectByValue("app-lang", getQueryParam("lang"));
   setSelectByValue("map-source", getQueryParam("map") || "opentopomap");
+  setSelectByValue("max-tiles", getQueryParam("max_tiles") || "200");
   setSelectByValue("fullscreen-map", getQueryParam("fullscreen"));
   setSelectByValue("map-orientation", getQueryParam("map_orientation") || "0");
   

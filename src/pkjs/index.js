@@ -16,36 +16,37 @@ var MAP_HEIGHT = 150;
 
 /////////////////////////// Local storage / tile cache management ///////////////////////
 
-const maxTiles = 200;
+var maxTiles = parseInt(localStorage.getItem('maxTiles')) || 200;
 const TILE_LRU_ID = "tileLRU";
 var tileLRU = [];
-{ // Initialization. Scope this code, so variables can be cleaned-up afterwards.
+
+function initAndEnforceTileCacheLimit() {
   let tileLRUfromStorage = localStorage.getItem(TILE_LRU_ID);
   if ( tileLRUfromStorage ) {
     tileLRU = tileLRUfromStorage.split(",");
-    if ( tileLRU.length > maxTiles ) {
-      tileLRU.splice(0, tileLRU.length - maxTiles);
-    }
   }
-  // Validate and convert (from before the tile management).
+  
   let toRemove = [];
-  let itemCount = localStorage.length
+  let itemCount = localStorage.length;
   for ( var idx = 0; idx < itemCount; idx++ ) {
     let key = localStorage.key(idx);
-    if ( key.startsWith("tile_") && tileLRU.indexOf(key) < 0 ) {
-      if ( tileLRU.length < maxTiles ) {
-        tileLRU.push(key);
-      } else {
-        toRemove.push(key);
-      }
+    if ( key && key.startsWith("tile_") && tileLRU.indexOf(key) < 0 ) {
+      tileLRU.push(key);
     }
   }
+  
+  while (tileLRU.length > maxTiles) {
+    let oldKey = tileLRU.shift();
+    toRemove.push(oldKey);
+  }
+  
   for ( const key of toRemove ) {
     localStorage.removeItem(key);
   }
   localStorage.setItem(TILE_LRU_ID, tileLRU.join(","));
   console.log("Tile cache now contains " + tileLRU.length + " items. Removed " + toRemove.length + " items.");
- }
+}
+initAndEnforceTileCacheLimit();
 
 function markTileUsed(key) {
   let idx = tileLRU.indexOf(key);
@@ -370,6 +371,7 @@ function openConfigPage() {
             '&turn_vibration=' + turnVibration +
             '&nav_view_mode=' + (localStorage.getItem('navViewMode') || '0') +
             '&dashboard_fields=' + (localStorage.getItem('dashboardFields') || '15') + 
+            '&max_tiles=' + (localStorage.getItem('maxTiles') || '200') +
             '&is_nav=' + (isNavigating ? 'true' : 'false') + 
             '&routes=' + encodeURIComponent(JSON.stringify(routesMeta)) +
             '&active_route_id=' + (localStorage.getItem('activeRouteId') || '0') +
@@ -736,6 +738,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
       var fullscreen = settings.fullscreen || false;
       var oldFullscreen = localStorage.getItem('fullscreen') === 'true';
       localStorage.setItem('fullscreen', fullscreen ? 'true' : 'false');
+      
+      var newMaxTiles = settings.maxTiles !== undefined ? settings.maxTiles : 200;
+      if (newMaxTiles !== maxTiles) {
+        maxTiles = newMaxTiles;
+        localStorage.setItem('maxTiles', maxTiles.toString());
+        initAndEnforceTileCacheLimit();
+        console.log('Max tiles limit changed to ' + maxTiles);
+      }
       
       if (fullscreen !== oldFullscreen) {
         console.log('Fullscreen setting changed from ' + oldFullscreen + ' to ' + fullscreen);
