@@ -2,6 +2,9 @@
 
 ## [3.2.0] - 2026-08-20
 
+### Added
+- **Offline Map Tile Cache Management (US-22)**: Implemented an LRU cache limit for downloaded map tiles in `localStorage` to prevent out-of-memory errors. The maximum cache size is now user-configurable in the settings page (from 50 up to 800 tiles).
+
 ### Fixed
 - **Settings Page Crash**: Hotfix for a JavaScript syntax error (literal newline injection) in `config.html` that caused the settings page to freeze, breaking the Save button and language switching functionality.
 
