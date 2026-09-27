@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.3.0] - 2026-09-27
+
+### Fixed
+- **Navigation Popup Arrow**: Fixed an issue where the big arrow in the navigation turn popup was pointing in the opposite direction (e.g. left for a right turn).
 ## [3.2.0] - 2026-08-20
 
 ### Added
