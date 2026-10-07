@@ -12,6 +12,10 @@
   #define FONT_ONE_COL FONT_KEY_BITHAM_30_BLACK
   #define FONT_TWO_COL FONT_KEY_GOTHIC_28_BOLD
   #define FONT_HEADER FONT_KEY_GOTHIC_24
+  #define FONT_CONFIRM_TEXT FONT_KEY_GOTHIC_28_BOLD
+  #define FONT_CONFIRM_SUBTEXT FONT_KEY_GOTHIC_28
+  #define FONT_ZOOM_TITLE FONT_KEY_BITHAM_30_BLACK
+  #define FONT_ZOOM_VALUE FONT_KEY_BITHAM_42_BOLD
 #elif defined(PBL_PLATFORM_CHALK)
   #define MAP_WIDTH 180
   #define MAP_HEIGHT 114
@@ -22,6 +26,10 @@
   #define FONT_ONE_COL FONT_KEY_BITHAM_30_BLACK
   #define FONT_TWO_COL FONT_KEY_GOTHIC_28_BOLD
   #define FONT_HEADER FONT_KEY_GOTHIC_18
+  #define FONT_CONFIRM_TEXT FONT_KEY_GOTHIC_24_BOLD
+  #define FONT_CONFIRM_SUBTEXT FONT_KEY_GOTHIC_18
+  #define FONT_ZOOM_TITLE FONT_KEY_GOTHIC_28
+  #define FONT_ZOOM_VALUE FONT_KEY_BITHAM_30_BLACK
 #else // basalt, aplite
   #define MAP_WIDTH 144
   #define MAP_HEIGHT 112
@@ -32,6 +40,10 @@
   #define FONT_ONE_COL FONT_KEY_GOTHIC_28_BOLD
   #define FONT_TWO_COL FONT_KEY_GOTHIC_24_BOLD
   #define FONT_HEADER FONT_KEY_GOTHIC_14
+  #define FONT_CONFIRM_TEXT FONT_KEY_GOTHIC_24_BOLD
+  #define FONT_CONFIRM_SUBTEXT FONT_KEY_GOTHIC_18
+  #define FONT_ZOOM_TITLE FONT_KEY_GOTHIC_28
+  #define FONT_ZOOM_VALUE FONT_KEY_BITHAM_30_BLACK
 #endif
 
 #define MAP_BUFFER_SIZE (MAP_WIDTH * MAP_HEIGHT)
@@ -43,6 +55,11 @@ static Layer *s_header_layer;
 static Layer *s_map_layer;
 static Layer *s_footer_layer;
 static Layer *s_dashboard_layer;
+
+static TextLayer *s_zoom_layer_title;
+static TextLayer *s_zoom_layer_value;
+static Layer *s_zoom_layer_bar;
+static Layer *s_zoom_layer;
 
 static TextLayer *s_distance_layer;
 static TextLayer *s_instruction_layer;
@@ -381,6 +398,13 @@ static uint32_t s_pending_route_id = 0;
 static uint32_t s_received_chunks_mask = 0;
 static uint32_t s_expected_chunks = 0;
 
+#define MAX_ZOOM_ENTRIES 4
+#define ZOOM_BUF_SIZE 32
+static char s_zoom_text[ZOOM_BUF_SIZE] = "";
+static const char* s_zoom_titles[MAX_ZOOM_ENTRIES];
+static const char* s_zoom_values[MAX_ZOOM_ENTRIES];
+static int s_zoom_selection = -1;
+
 static char s_distance_text[16] = "---";
 static char s_instruction_text[64] = "Warte auf GPS...";
 static char s_avg_speed_text[16] = "0.0";
@@ -677,13 +701,13 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
     
     // Loading Text
-    graphics_context_set_text_color(ctx, GColorDarkGray);
+    graphics_context_set_text_color(ctx, GColorOxfordBlue);
     const char *loading_text = s_gps_connected ? 
       i18n(STR_LOADING_MAP) : 
       i18n(STR_NO_GPS_SIGNAL);
     graphics_draw_text(ctx, 
                        loading_text, 
-                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+                       fonts_get_system_font(INSTRUCTION_FONT),
                        GRect(10, bounds.size.h / 2 - 12, bounds.size.w - 20, 30),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
@@ -732,22 +756,102 @@ static void dashboard_update_proc(Layer *layer, GContext *ctx) {
   }
 }
 
+char* SpaceToNewline(char* str) {
+  char *slash = strrchr(str, ' ');
+  if (slash) {
+    *slash = '\n';
+    return slash+1;
+  }
+  return slash;
+}
+
+void SpaceOrNewline(char* str) {
+  if ( s_active_count > 2 )
+  {
+    SpaceToNewline(str);
+  }
+}
+
+void HideZoom() {
+  s_zoom_selection = -1;
+  layer_set_hidden(s_zoom_layer, true);
+}
+
+bool ShowZoom() {
+  if ( s_zoom_titles[0] != NULL )
+  {
+    if ( s_zoom_selection < 0 ) {
+      layer_set_hidden(s_zoom_layer, false);
+    }
+    return true;
+  }
+  return false;
+}
+
+float s_zoom_bar_pct = -1;
+
+void SetZoomText() {
+  strncpy(s_zoom_text, s_zoom_values[s_zoom_selection], ZOOM_BUF_SIZE);
+  char* secondpos =  SpaceToNewline(s_zoom_text);
+  s_zoom_bar_pct = -1;
+  if ( secondpos ) {
+    int numone = atoi(s_zoom_text);
+    int numtwo = atoi(secondpos);
+    float total = numone + numtwo;
+    if ( total > 0 ) {
+      s_zoom_bar_pct = numone / total;
+    }
+  }
+  text_layer_set_text(s_zoom_layer_title, s_zoom_titles[s_zoom_selection]);
+  layer_mark_dirty((Layer*)s_zoom_layer_value);
+  layer_mark_dirty(s_zoom_layer_bar);
+}
+
+static void update_zoom_layer_bar(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  if ( s_zoom_bar_pct >= 0 ) {
+    int16_t left_size = bounds.size.w * s_zoom_bar_pct;
+    uint16_t corner_radius = bounds.size.h / 4;
+    graphics_context_set_fill_color(ctx, GColorMediumSpringGreen);
+    graphics_fill_rect(ctx, GRect(0,0,left_size, bounds.size.h), corner_radius, GCornersLeft);
+    graphics_context_set_fill_color(ctx, GColorSunsetOrange);
+    graphics_fill_rect(ctx, GRect(left_size,0,bounds.size.w - left_size, bounds.size.h), corner_radius, GCornersRight);  
+  } else {
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, bounds, 0, 0);
+  }
+}
+
 // Button Clicks Handlers
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // Zoom In
-  if (s_zoom_level < 17) {
-    s_zoom_level++;
-    layer_mark_dirty(s_header_layer);
-    send_zoom_change();
+  if ( s_show_dashboard ) {
+    if ( ShowZoom() ) {
+      if ( --s_zoom_selection < 0 ) s_zoom_selection = 3;
+      while ( s_zoom_titles[s_zoom_selection] == NULL ) s_zoom_selection--;
+      SetZoomText();
+    }
+  } else {
+    // Zoom In
+    if (s_zoom_level < 17) {
+      s_zoom_level++;
+      layer_mark_dirty(s_header_layer);
+      send_zoom_change();
+    }
   }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // Zoom Out
-  if (s_zoom_level > 12) {
-    s_zoom_level--;
-    layer_mark_dirty(s_header_layer);
-    send_zoom_change();
+  if ( s_show_dashboard ) {
+    if ( ShowZoom() ) {
+      if ( ++s_zoom_selection >= MAX_ZOOM_ENTRIES || s_zoom_titles[s_zoom_selection] == NULL ) s_zoom_selection = 0;
+      SetZoomText();
+    }
+  } else {
+    // Zoom Out
+    if (s_zoom_level > 12) {
+      s_zoom_level--;
+      send_zoom_change();
+    }
   }
 }
 
@@ -787,6 +891,7 @@ static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
     layer_set_hidden(s_map_layer, s_show_dashboard);
     layer_set_hidden(s_footer_layer, s_show_dashboard);
     layer_set_hidden(s_dashboard_layer, !s_show_dashboard);
+    HideZoom();
     if (s_fullscreen_mode) {
       layer_set_hidden(s_header_layer, true); // Re-hide header on map in fullscreen mode
     }
@@ -858,17 +963,6 @@ static void big_nav_update_proc(Layer *layer, GContext *ctx) {
                      GRect(0, bounds.size.h - 55, bounds.size.w, 50),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
-
-void SpaceOrNewline(char* str) {
-  if ( s_active_count > 2 )
-  {
-    char *slash = strstr(str, " ");
-    if (slash) {
-      slash[0] = '\n';
-    }
-  }
-}
-
 
 // AppMessage Callback Handlers
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
@@ -1248,8 +1342,13 @@ static void layout_dashboard(void) {
   for(int i = 0; i < 10; i++) {
     layer_set_hidden(text_layer_get_layer(t_layers[i]), !active[i]);
     layer_set_hidden(text_layer_get_layer(v_layers[i]), !active[i]);
-    if(active[i]) active_count++;
+    if ( active[i] ) {
+      s_zoom_titles[active_count] = text_layer_get_text(t_layers[i]);
+      s_zoom_values[active_count] = text_layer_get_text(v_layers[i]);
+      active_count++;
+    }
   }
+  if ( active_count < MAX_ZOOM_ENTRIES ) s_zoom_titles[active_count] = NULL;
   
   // Layout coords at the bottom
   layer_set_hidden(text_layer_get_layer(s_dash_coords_title_layer), false);
@@ -1529,6 +1628,27 @@ static void main_window_load(Window *window) {
   text_layer_set_text(s_dash_dist_dest_val_layer, s_dist_dest_text);
   layer_add_child(s_dashboard_layer, text_layer_get_layer(s_dash_dist_dest_val_layer));
   
+  // Zoom layer, overlays dashboard layer.
+  int16_t zoom_title_height = bounds.size.h/3;
+  int16_t zoom_value_height = bounds.size.h/2;
+  int16_t zoom_bar_height = bounds.size.h - zoom_title_height - zoom_value_height;
+  s_zoom_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  layer_add_child(window_layer, s_zoom_layer);
+  s_zoom_layer_title = text_layer_create(GRect(0, 0, bounds.size.w, zoom_title_height));
+  layer_add_child(s_zoom_layer, text_layer_get_layer(s_zoom_layer_title));
+  text_layer_set_font(s_zoom_layer_title, fonts_get_system_font(FONT_ZOOM_TITLE));
+  text_layer_set_text_alignment(s_zoom_layer_title, GTextAlignmentCenter);
+  text_layer_set_background_color(s_zoom_layer_title, GColorVividCerulean);
+  s_zoom_layer_value = text_layer_create(GRect(0, zoom_title_height, bounds.size.w, zoom_value_height));
+  layer_add_child(s_zoom_layer, text_layer_get_layer(s_zoom_layer_value));
+  text_layer_set_font(s_zoom_layer_value, fonts_get_system_font(FONT_ZOOM_VALUE));
+  text_layer_set_text(s_zoom_layer_value, s_zoom_text);
+  text_layer_set_text_alignment(s_zoom_layer_value, GTextAlignmentCenter);
+  s_zoom_layer_bar = layer_create(GRect(0, zoom_title_height + zoom_value_height, bounds.size.w, zoom_bar_height));
+  layer_add_child(s_zoom_layer, s_zoom_layer_bar);
+  layer_set_update_proc(s_zoom_layer_bar, update_zoom_layer_bar);
+  HideZoom();
+
   update_ui_languages();
   layout_dashboard();
   update_layout();
@@ -1599,6 +1719,11 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_dash_dist_dest_title_layer);
   text_layer_destroy(s_dash_dist_dest_val_layer);
   layer_destroy(s_dashboard_layer);
+  
+  text_layer_destroy(s_zoom_layer_title);
+  text_layer_destroy(s_zoom_layer_value);
+  layer_destroy(s_zoom_layer_bar);
+  layer_destroy(s_zoom_layer);
 }
 
 static void battery_state_handler(BatteryChargeState charge) {
@@ -1735,14 +1860,14 @@ static void confirm_window_load(Window *window) {
   
   s_confirm_text_layer = text_layer_create(GRect(5, 15, bounds.size.w - 10, 60));
   text_layer_set_background_color(s_confirm_text_layer, GColorClear);
-  text_layer_set_text_color(s_confirm_text_layer, GColorBlack);
-  text_layer_set_font(s_confirm_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_color(s_confirm_text_layer, GColorOxfordBlue);
+  text_layer_set_font(s_confirm_text_layer, fonts_get_system_font(FONT_CONFIRM_TEXT));
   text_layer_set_text_alignment(s_confirm_text_layer, GTextAlignmentCenter);
   
-  s_confirm_subtext_layer = text_layer_create(GRect(5, 75, bounds.size.w - 10, 70));
+  s_confirm_subtext_layer = text_layer_create(GRect(5, 50, bounds.size.w - 10, bounds.size.h - 50));
   text_layer_set_background_color(s_confirm_subtext_layer, GColorClear);
-  text_layer_set_text_color(s_confirm_subtext_layer, GColorDarkGray);
-  text_layer_set_font(s_confirm_subtext_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text_color(s_confirm_subtext_layer, GColorBlack);
+  text_layer_set_font(s_confirm_subtext_layer, fonts_get_system_font(FONT_CONFIRM_SUBTEXT));
   text_layer_set_text_alignment(s_confirm_subtext_layer, GTextAlignmentCenter);
   
   if (s_pending_route_id == 0) {

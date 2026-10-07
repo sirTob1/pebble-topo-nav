@@ -227,10 +227,14 @@ function renderViewport(currentLat, currentLon, zoom, gpxTrack, tileCache, close
       var sy1 = Math.floor(pix1.y - tlY);
       var sx2 = Math.floor(pix2.x - tlX);
       var sy2 = Math.floor(pix2.y - tlY);
-      
+
       // Draw line. Gray out walked parts (k < closestIdx)
-      if (closestIdx !== undefined && closestIdx !== null && k < closestIdx) {
-        drawLineThick(rgbaBuffer, sx1, sy1, sx2, sy2, 5, 120, 120, 120); // 5px darker grey line
+      if (closestIdx !== undefined && closestIdx !== null && k <= closestIdx) {
+        if ( k < closestIdx ) {
+          drawLineThick(rgbaBuffer, sx1, sy1, sx2, sy2, 5, 120, 120, 120); // 5px darker grey line
+        } else {
+          drawLineThick(rgbaBuffer, sx1, sy1, sx2, sy2, 5, 0, 0, 255); // 5px blue line
+        }
       } else {
         drawLineThick(rgbaBuffer, sx1, sy1, sx2, sy2, 5, 255, 60, 0); // 5px bright orange line
       }
