@@ -563,18 +563,18 @@ static void header_update_proc(Layer *layer, GContext *ctx) {
                      
   // Draw GPS Status icon
   if (s_gps_connected) {
-    graphics_context_set_fill_color(ctx, GColorIslamicGreen);
+    graphics_context_set_fill_color(ctx, COLOR_FALLBACK(GColorIslamicGreen, GColorBlack));
   } else {
-    graphics_context_set_fill_color(ctx, GColorRed);
+    graphics_context_set_fill_color(ctx, COLOR_FALLBACK(GColorRed, GColorDarkGray));
   }
   graphics_fill_circle(ctx, GPoint(bounds.size.w - 47,15), 6);
   
   // Draw Recording Status dot
   if (s_recording_active) {
-    graphics_context_set_fill_color(ctx, GColorRed);
+    graphics_context_set_fill_color(ctx, COLOR_FALLBACK(GColorRed, GColorBlack));
     graphics_fill_circle(ctx, GPoint(bounds.size.w - 62,15), 6);
   } else {
-    graphics_context_set_stroke_color(ctx, GColorRed);
+    graphics_context_set_stroke_color(ctx, COLOR_FALLBACK(GColorRed, GColorBlack));
     graphics_draw_circle(ctx, GPoint(bounds.size.w - 62,15), 6);
   }
 #endif
@@ -812,9 +812,9 @@ static void update_zoom_layer_bar(Layer *layer, GContext *ctx) {
   if ( s_zoom_bar_pct >= 0 ) {
     int16_t left_size = bounds.size.w * s_zoom_bar_pct;
     uint16_t corner_radius = bounds.size.h / 4;
-    graphics_context_set_fill_color(ctx, GColorMediumSpringGreen);
+    graphics_context_set_fill_color(ctx, COLOR_FALLBACK(GColorMediumSpringGreen, GColorBlack));
     graphics_fill_rect(ctx, GRect(0,0,left_size, bounds.size.h), corner_radius, GCornersLeft);
-    graphics_context_set_fill_color(ctx, GColorSunsetOrange);
+    graphics_context_set_fill_color(ctx, COLOR_FALLBACK(GColorSunsetOrange, GColorDarkGray));
     graphics_fill_rect(ctx, GRect(left_size,0,bounds.size.w - left_size, bounds.size.h), corner_radius, GCornersRight);  
   } else {
     graphics_context_set_fill_color(ctx, GColorWhite);
@@ -1638,7 +1638,7 @@ static void main_window_load(Window *window) {
   layer_add_child(s_zoom_layer, text_layer_get_layer(s_zoom_layer_title));
   text_layer_set_font(s_zoom_layer_title, fonts_get_system_font(FONT_ZOOM_TITLE));
   text_layer_set_text_alignment(s_zoom_layer_title, GTextAlignmentCenter);
-  text_layer_set_background_color(s_zoom_layer_title, GColorVividCerulean);
+  text_layer_set_background_color(s_zoom_layer_title, COLOR_FALLBACK(GColorVividCerulean, GColorClear));
   s_zoom_layer_value = text_layer_create(GRect(0, zoom_title_height, bounds.size.w, zoom_value_height));
   layer_add_child(s_zoom_layer, text_layer_get_layer(s_zoom_layer_value));
   text_layer_set_font(s_zoom_layer_value, fonts_get_system_font(FONT_ZOOM_VALUE));
@@ -1860,7 +1860,7 @@ static void confirm_window_load(Window *window) {
   
   s_confirm_text_layer = text_layer_create(GRect(5, 15, bounds.size.w - 10, 60));
   text_layer_set_background_color(s_confirm_text_layer, GColorClear);
-  text_layer_set_text_color(s_confirm_text_layer, GColorOxfordBlue);
+  text_layer_set_text_color(s_confirm_text_layer, COLOR_FALLBACK(GColorOxfordBlue, GColorBlack));
   text_layer_set_font(s_confirm_text_layer, fonts_get_system_font(FONT_CONFIRM_TEXT));
   text_layer_set_text_alignment(s_confirm_text_layer, GTextAlignmentCenter);
   
