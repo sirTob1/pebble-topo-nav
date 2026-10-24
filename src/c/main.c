@@ -843,7 +843,7 @@ static void big_nav_update_proc(Layer *layer, GContext *ctx) {
   // Draw Arrow
   if (s_big_arrow_path) {
     int nav_b = s_nav_bearing < 0 ? 0 : s_nav_bearing;
-    int32_t angle = (nav_b == 0 ? 0 : (360 - nav_b)) * TRIG_MAX_ANGLE / 360;
+    int32_t angle = nav_b * TRIG_MAX_ANGLE / 360;
     gpath_rotate_to(s_big_arrow_path, angle);
     GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2 - 20);
     gpath_move_to(s_big_arrow_path, center);

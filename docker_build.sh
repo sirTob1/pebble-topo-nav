@@ -6,6 +6,7 @@ echo "Copying files to container root..."
 rm -rf /root/project
 mkdir -p /root/project
 cp -r /app/src /root/project/
+if [ -d "/app/resources" ]; then cp -r /app/resources /root/project/; fi
 cp /app/package.json /root/project/
 cp /app/wscript /root/project/
 

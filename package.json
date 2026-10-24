@@ -1,7 +1,7 @@
 {
   "name": "pebble-topo-nav",
   "author": "Antigravity",
-  "version": "3.2.0",
+  "version": "3.4.0",
   "keywords": [
     "pebble-app"
   ],
@@ -58,7 +58,14 @@
       "MAP_ORIENTATION"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MENU_ICON",
+          "file": "images/menu_icon.png",
+          "menuIcon": true
+        }
+      ]
     },
     "capabilities": [
       "configurable"

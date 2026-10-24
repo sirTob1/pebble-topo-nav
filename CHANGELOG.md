@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.4.0] - 2026-10-24
+
+### Added
+- **Custom App Launcher Icon (US-23)**: Added a `25x25` pixel transparent compass rose launcher icon (`resources/images/menu_icon.png`) derived from the app icon without text, and registered it in `package.json` (`menuIcon: true`) so the app displays a custom icon in the Pebble OS App Drawer across all platforms (`aplite`, `basalt`, `chalk`, `emery`).
+
+## [3.3.0] - 2026-09-27
+
+### Fixed
+- **Navigation Popup Arrow**: Fixed an issue where the big arrow in the navigation turn popup was pointing in the opposite direction (e.g. left for a right turn).
 ## [3.2.0] - 2026-08-20
 
 ### Added
