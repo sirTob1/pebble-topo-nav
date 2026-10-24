@@ -68,6 +68,7 @@ graph TD
 
 1. **Watchapp (`src/c/main.c`)**:
    * Written in C. Renders the map layer, the custom sensor-fused GPath compass chevron, and the dual-column metrics dashboard.
+   * Includes a dedicated `25x25` transparent compass rose launcher icon (`resources/images/menu_icon.png`) for the Pebble OS App Drawer across all target platforms.
    * Manages packet assembly: Receives raw 30,000-byte framebuffers (`200x150` GColor8 pixels) from the phone in 3,000-byte `AppMessage` chunks.
    * Listens to Pebble's `CompassService` and `BatteryStateService`.
    * Integrates a Custom Menu Window (`SimpleMenuLayer`) for on-watch route swapping.
