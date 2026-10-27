@@ -287,7 +287,7 @@ static uint16_t s_current_map_width = MAP_WIDTH;
 static uint16_t s_current_map_height = MAP_HEIGHT;
 static uint32_t s_current_map_buffer_size = MAP_WIDTH * MAP_HEIGHT;
 static bool s_fullscreen_mode = false;
-static uint16_t s_dashboard_fields = 31;
+static uint16_t s_dashboard_fields = 15;
 static time_t s_activity_start_time = 0;
 #define MAX_ROUTES 15
 static uint32_t s_route_ids[MAX_ROUTES];
@@ -701,7 +701,7 @@ static void map_layer_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
     
     // Loading Text
-    graphics_context_set_text_color(ctx, GColorOxfordBlue);
+    graphics_context_set_text_color(ctx, COLOR_FALLBACK(GColorOxfordBlue, GColorBlack));
     const char *loading_text = s_gps_connected ? 
       i18n(STR_LOADING_MAP) : 
       i18n(STR_NO_GPS_SIGNAL);
@@ -722,7 +722,7 @@ static void dashboard_update_proc(Layer *layer, GContext *ctx) {
   
   s_active_count = 0;
   for(int i = 0; i < 10; i++) {
-    if ((s_dashboard_fields & (1 << i)) != 0) {
+    if ((s_dashboard_fields & (1 << i)) != 0 && s_active_count < MAX_ZOOM_ENTRIES) {
       s_active_count++;
     }
   }
@@ -791,7 +791,10 @@ bool ShowZoom() {
 float s_zoom_bar_pct = -1;
 
 void SetZoomText() {
-  strncpy(s_zoom_text, s_zoom_values[s_zoom_selection], ZOOM_BUF_SIZE);
+  if (s_zoom_selection < 0 || s_zoom_selection >= MAX_ZOOM_ENTRIES || s_zoom_titles[s_zoom_selection] == NULL) {
+    return;
+  }
+  snprintf(s_zoom_text, ZOOM_BUF_SIZE, "%s", s_zoom_values[s_zoom_selection]);
   char* secondpos =  SpaceToNewline(s_zoom_text);
   s_zoom_bar_pct = -1;
   if ( secondpos ) {
@@ -1194,6 +1197,9 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     snprintf(s_heading_text, sizeof(s_heading_text), "%s", heading_str_tuple->value->cstring);
     text_layer_set_text(s_dash_heading_val_layer, s_heading_text);
   }
+  if (s_show_dashboard && s_zoom_selection >= 0) {
+    SetZoomText();
+  }
   
 
   
@@ -1340,15 +1346,24 @@ static void layout_dashboard(void) {
   
   int active_count = 0;
   for(int i = 0; i < 10; i++) {
-    layer_set_hidden(text_layer_get_layer(t_layers[i]), !active[i]);
-    layer_set_hidden(text_layer_get_layer(v_layers[i]), !active[i]);
-    if ( active[i] ) {
+    bool is_visible = active[i] && (active_count < MAX_ZOOM_ENTRIES);
+    layer_set_hidden(text_layer_get_layer(t_layers[i]), !is_visible);
+    layer_set_hidden(text_layer_get_layer(v_layers[i]), !is_visible);
+    if ( is_visible ) {
       s_zoom_titles[active_count] = text_layer_get_text(t_layers[i]);
       s_zoom_values[active_count] = text_layer_get_text(v_layers[i]);
       active_count++;
     }
   }
-  if ( active_count < MAX_ZOOM_ENTRIES ) s_zoom_titles[active_count] = NULL;
+  for (int j = active_count; j < MAX_ZOOM_ENTRIES; j++) {
+    s_zoom_titles[j] = NULL;
+    s_zoom_values[j] = NULL;
+  }
+  if (s_zoom_selection >= active_count) {
+    HideZoom();
+  } else if (s_zoom_selection >= 0) {
+    SetZoomText();
+  }
   
   // Layout coords at the bottom
   layer_set_hidden(text_layer_get_layer(s_dash_coords_title_layer), false);
@@ -1373,7 +1388,7 @@ static void layout_dashboard(void) {
 
   int current_idx = 0;
   for(int i = 0; i < 10; i++) {
-    if(!active[i]) continue;
+    if(!active[i] || current_idx >= MAX_ZOOM_ENTRIES) continue;
     
     int r = current_idx / cols;
     int c = current_idx % cols;
@@ -1690,7 +1705,6 @@ static void main_window_unload(Window *window) {
   layer_destroy(s_header_layer);
   layer_destroy(s_map_layer);
   layer_destroy(s_footer_layer);
-  layer_destroy(s_dashboard_layer);
   
   if (s_big_nav_layer) {
     layer_destroy(s_big_nav_layer);
@@ -1731,6 +1745,9 @@ static void battery_state_handler(BatteryChargeState charge) {
   if (s_dash_battery_val_layer && !layer_get_hidden(text_layer_get_layer(s_dash_battery_val_layer))) {
     text_layer_set_text(s_dash_battery_val_layer, s_battery_text);
   }
+  if (s_show_dashboard && s_zoom_selection >= 0) {
+    SetZoomText();
+  }
   if (s_header_layer) {
     layer_mark_dirty(s_header_layer);
   }
@@ -1761,6 +1778,9 @@ static void update_time_and_duration() {
   
   if (s_dash_duration_val_layer && !layer_get_hidden(text_layer_get_layer(s_dash_duration_val_layer))) {
     text_layer_set_text(s_dash_duration_val_layer, s_duration_text);
+  }
+  if (s_show_dashboard && s_zoom_selection >= 0) {
+    SetZoomText();
   }
 }
 
@@ -1978,7 +1998,7 @@ static void init() {
     s_language = LANG_EN;
   }
   
-  s_dashboard_fields = persist_exists(PERSIST_KEY_DASHBOARD_FIELDS) ? persist_read_int(PERSIST_KEY_DASHBOARD_FIELDS) : 31;
+  s_dashboard_fields = persist_exists(PERSIST_KEY_DASHBOARD_FIELDS) ? persist_read_int(PERSIST_KEY_DASHBOARD_FIELDS) : 15;
   s_map_orientation = persist_exists(PERSIST_KEY_MAP_ORIENTATION) ? persist_read_int(PERSIST_KEY_MAP_ORIENTATION) : 0;
 
   s_main_window = window_create();

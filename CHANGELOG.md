@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.5.0] - 2026-10-27
+
+### Added
+- **Dashboard Zoom View & Progress Bar (PR #43 by @patrickvbe, US-24)**: Added a full-screen Dashboard Zoom overlay. Pressing *Up* or *Down* while on the stats dashboard cycles through the active metrics in a large, high-legibility font and renders a visual progress bar at the bottom for dual-value metrics (such as walked/remaining distance or elevation gain).
+
+### Changed
+- **Confirmation Dialog & UI Typography (PR #43 by @patrickvbe)**: Improved font sizes, layout bounds, and text colors across the route confirmation dialogs and map loading screen.
+
+### Fixed
+- **Monochrome Display Color Fallbacks (PR #43 by @patrickvbe, US-24)**: Added `COLOR_FALLBACK` support for status indicators, zoom layers, and loading text on B/W Pebble displays (`aplite`).
+- **Dashboard Zoom Memory Safety & Live Updates (US-24)**: Fixed an out-of-bounds array write in `layout_dashboard()` when more than 4 dashboard fields were active (and aligned the default bitmask to 4 fields). Added automatic live updates to the zoomed metric text and progress bar as new GPS, battery, or timer data arrives, and removed a duplicate `layer_destroy(s_dashboard_layer)` call.
+
 ## [3.4.0] - 2026-10-24
 
 ### Added
