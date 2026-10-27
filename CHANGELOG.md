@@ -7,7 +7,6 @@
 
 ### Changed
 - **Confirmation Dialog & UI Typography (PR #43 by @patrickvbe)**: Improved font sizes, layout bounds, and text colors across the route confirmation dialogs and map loading screen.
-- **Dashboard Zoom Navigation UX (US-24)**: Pressing *Back* while in the Dashboard Zoom view now returns to the 4-field dashboard overview first before exiting back to the map on a second press.
 
 ### Fixed
 - **Monochrome Display Color Fallbacks (PR #43 by @patrickvbe, US-24)**: Added `COLOR_FALLBACK` support for status indicators, zoom layers, and loading text on B/W Pebble displays (`aplite`).

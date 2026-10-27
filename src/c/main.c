@@ -889,10 +889,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_show_dashboard) {
-    if (s_zoom_selection >= 0) {
-      HideZoom();
-      return;
-    }
     // Return to map mode (or big nav mode)
     s_show_dashboard = false;
     layer_set_hidden(s_map_layer, s_show_dashboard);
